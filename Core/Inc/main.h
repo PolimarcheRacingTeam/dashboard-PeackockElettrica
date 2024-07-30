@@ -65,12 +65,12 @@ void Error_Handler(void);
 #define SR_LATCH_GPIO_Port GPIOB
 #define SR_CLOCK_Pin GPIO_PIN_4
 #define SR_CLOCK_GPIO_Port GPIOB
-#define B3_Pin GPIO_PIN_5
-#define B3_GPIO_Port GPIOB
-#define B2_Pin GPIO_PIN_6
-#define B2_GPIO_Port GPIOB
-#define B1_Pin GPIO_PIN_7
-#define B1_GPIO_Port GPIOB
+#define B1_button_Pin GPIO_PIN_5
+#define B1_button_GPIO_Port GPIOB
+#define B2_button_Pin GPIO_PIN_6
+#define B2_button_GPIO_Port GPIOB
+#define B3_button_Pin GPIO_PIN_7
+#define B3_button_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

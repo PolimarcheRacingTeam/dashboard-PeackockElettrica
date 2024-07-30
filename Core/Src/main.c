@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define check_button1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +47,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,6 +61,26 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+int8_t nData = 15;
+int32_t datas[15];
+//battery_bar,speed_value,w_last_lap,estimated_laps,engine_mod,inverter_temp1,delta_time,engine_temp1,lap_time,lv_battery,readyToDrive.val,engine_tempLX2,engine_tempRX2,inverter_temp2,battery_temp2
+char names[15][30]= {"battery_bar","speed_value","w_last_lap","estimated_laps","engine_mod","inverter_temp1","delta_time","engine_temp1","lap_time","lv_battery","readyToDrive","engine_tempLX2","engine_tempRX2","inverter_temp2","battery_temp2"};
+int8_t txt[] = {1,2,3,4,5,6,7,8,9,11,12,13,14};
+int8_t val[] = {0,1};
+
+uint8_t currentPage = 0;
+
+uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
+
+//comunica con il nextion tramite messaggi tipo "oggetto.txt/val = {valore}" + 3volte comando 0xFF per confermare
+void NEXTION_SendString (char* ID, char* string,char* tipo){ //tipo può essere txt o val
+	char buff[50];
+	int len = sprintf(buff,"%s.%s=\"%s\"",ID,tipo,string);
+	HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,1000);
+	HAL_UART_Transmit(&huart2,cmd_end,3,100); //invio comandi = esegue
+}
+
 
 /* USER CODE END 0 */
 
@@ -94,6 +116,9 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  //NEXTION_SendString("t0","Hello");
+  //NEXTION_SendString("t1","World");
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,6 +128,43 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+	  //Lettura stato del GPIO Button, controllo se è alto o basso, 0 = Premuto
+//	  if(HAL_GPIO_ReadPin(B1_button_GPIO_Port, B1_button_Pin) == 0){
+		  //premuto
+//		  if ( messaggio freni==1){
+//			  CANINVIAr2d;
+//			  data[10]=1;
+//		  }
+//	  }
+
+	  if(HAL_GPIO_ReadPin(B2_button_GPIO_Port, B2_button_Pin) == 0){
+	  		  //premuto pulsante 2
+		  if (currentPage){
+				currentPage =0;
+				char buff[10];
+				int len = sprintf(buff,"page main");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,1000);
+				HAL_UART_Transmit(&huart2,cmd_end,3,100);
+	  		  } else{
+	  			currentPage = 1;
+	  			char buff[10];
+				int len = sprintf(buff,"page temp");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,1000);
+				HAL_UART_Transmit(&huart2,cmd_end,3,100);
+	  		  }
+	  	  }
+
+
+	  char tipo[3];
+		  for(int i =0;i<nData;i++){
+				  if (i==0 || i==10){
+					  strcpy(tipo,"val");
+				  } else{
+					  strcpy(tipo,"txt");
+				  }
+				  NEXTION_SendString((char*)names[i],(char*)datas[i],tipo);
+			  }
   }
   /* USER CODE END 3 */
 }
@@ -254,8 +316,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : B3_Pin B2_Pin B1_Pin */
-  GPIO_InitStruct.Pin = B3_Pin|B2_Pin|B1_Pin;
+  /*Configure GPIO pin : B1_button_Pin */
+  GPIO_InitStruct.Pin = B1_button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(B1_button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : B2_button_Pin B3_button_Pin */
+  GPIO_InitStruct.Pin = B2_button_Pin|B3_button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
