@@ -61,9 +61,18 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+CAN_FilterTypeDef sFilterConfig;
+CAN_TxHeaderTypeDef TxHeader, r2dTxHeader, mapTxHeader;
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
+#define RAGGIORUOTA 5 //metri
+//uint8_t freniRxData[1];
+uint32_t TxMailbox;
+
 
 int8_t nData = 15;
-int32_t datas[15];
+int32_t data[15];
+int8_t datacheck = 0;
 //battery_bar,speed_value,w_last_lap,estimated_laps,engine_mod,inverter_temp1,delta_time,engine_temp1,lap_time,lv_battery,readyToDrive.val,engine_tempLX2,engine_tempRX2,inverter_temp2,battery_temp2
 char names[15][30]= {"battery_bar","speed_value","w_last_lap","estimated_laps","engine_mod","inverter_temp1","delta_time","engine_temp1","lap_time","lv_battery","readyToDrive","engine_tempLX2","engine_tempRX2","inverter_temp2","battery_temp2"};
 int8_t txt[] = {1,2,3,4,5,6,7,8,9,11,12,13,14};
@@ -73,6 +82,12 @@ uint8_t currentPage = 0;
 
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 
+//inizializzazione variabili per ricezione CAN
+uint8_t frenoPremuto = 0,tempBattery =0, speed=0;
+float voltBattery=0;
+uint16_t tempMot1 = 0, tempMot2 = 0, tempAvgMot = 0, tempInverter1=0,tempInverter2=0,tempAvgInverter=0;
+
+
 //comunica con il nextion tramite messaggi tipo "oggetto.txt/val = {valore}" + 3volte comando 0xFF per confermare
 void NEXTION_SendString (char* ID, char* string,char* tipo){ //tipo può essere txt o val
 	char buff[50];
@@ -81,6 +96,40 @@ void NEXTION_SendString (char* ID, char* string,char* tipo){ //tipo può essere 
 	HAL_UART_Transmit(&huart2,cmd_end,3,100); //invio comandi = esegue
 }
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData)== HAL_OK){
+		// 'rxHeader' contiene le informazioni del messaggio CAN ricevuto
+		        // 'rxData' contiene i dati del messaggio ricevuto
+		switch(RxHeader.StdId){
+		case 0x012: //id brakeLigh
+			frenoPremuto = (RxData[0]>>0) & 0x01; //prendo il prime byte, il bit posizione 0, &0x01 mascehra tutti gli altri bit;
+			break;
+		case 0x021:
+			tempBattery = (uint8_t)(RxData[0]+RxData[1]+RxData[2]+RxData[3]+RxData[4]+RxData[5])/6; //temperatura media Pacco Batteria
+			break;
+		case 0x053:
+			memcpy(&voltBattery,RxData,sizeof(float));
+			// pacco batteria-> voltBattery = (uint8_t)(RxData[0]+RxData[1]+RxData[2]+RxData[3]+RxData[4]+RxData[5])/6; //voltaggio media Pacco Batteria
+			break;
+		case 0x023:
+			tempMot1 = (uint16_t)(RxData[0]<<8|RxData[1]);
+			tempMot2 = (uint16_t)(RxData[2]<<8|RxData[3]);
+			tempAvgMot = (uint16_t)((tempMot1+tempMot2)/2);
+			tempInverter1 = (uint16_t)(RxData[4]<<8|RxData[5]);
+			tempInverter2 = (uint16_t)(RxData[6]<<8|RxData[7]);
+			tempAvgInverter = (uint16_t)((tempInverter1+tempInverter2)/2);
+			break;
+		case 0x030:
+			speed = (uint8_t)((((RxData[0]<<8|RxData[1])+(RxData[2]<<8|RxData[3]))/4)*RAGGIORUOTA*3.6);
+			break;
+
+
+
+
+
+		}
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -116,6 +165,34 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x012 << 5;		//id di base da controllare
+  sFilterConfig.FilterIdLow = 0;	//= utilizzato
+  sFilterConfig.FilterMaskIdHigh = 0x3F << 5; // Maschera per coprire l'intervallo da 0x012 a 0x053  sFilterConfig.FilterMaskIdLow = 0;
+  sFilterConfig.FilterMaskIdLow = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK; // Modalità maschera
+  sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.FilterBank = 0;
+  HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  r2dTxHeader.DLC = 1;	//numero byte che deve ricevere (in questo caso basterebbe un bit)
+  r2dTxHeader.StdId = 0x016; //id pacchetto
+  r2dTxHeader.IDE = CAN_ID_STD;
+  r2dTxHeader.RTR = CAN_RTR_DATA; //DATA
+
+  mapTxHeader.DLC = 1;		//Numero byte messaggio, da 1 a 8
+  mapTxHeader.StdId = 0x040; // Standard Identifier, va da 0 a 0x7FF (11bit)
+  mapTxHeader.IDE = CAN_ID_STD;	//Indirizzi standard e non extended
+  mapTxHeader.RTR = CAN_RTR_DATA; //DATA
+
+  HAL_Delay(1000);
+
+  uint32_t currMillis = HAL_GetTick();
+
   //NEXTION_SendString("t0","Hello");
   //NEXTION_SendString("t1","World");
 
@@ -129,17 +206,23 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  //Lettura stato del GPIO Button, controllo se è alto o basso, 0 = Premuto
-//	  if(HAL_GPIO_ReadPin(B1_button_GPIO_Port, B1_button_Pin) == 0){
-		  //premuto
-//		  if ( messaggio freni==1){
-//			  CANINVIAr2d;
-//			  data[10]=1;
-//		  }
-//	  }
 
-	  if(HAL_GPIO_ReadPin(B2_button_GPIO_Port, B2_button_Pin) == 0){
+
+	  //R2D
+	  //Lettura stato del GPIO Button, controllo se è alto o basso, 0 = Premuto
+	  if(HAL_GPIO_ReadPin(B1_button_GPIO_Port, B1_button_Pin) == 0 && (HAL_GetTick()-currMillis)>1000){
+		  //premuto
+		  currMillis = HAL_GetTick();
+		  if (frenoPremuto){
+			  uint8_t r2dToDriveValore=1;
+			  HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dToDriveValore, &TxMailbox);
+			  data[10]=1;
+		  }
+	  }
+
+	  if(HAL_GPIO_ReadPin(B2_button_GPIO_Port, B2_button_Pin) == 0 && (HAL_GetTick()-currMillis)>1000){
 	  		  //premuto pulsante 2
+		  currMillis = HAL_GetTick();
 		  if (currentPage){
 				currentPage =0;
 				char buff[10];
@@ -157,14 +240,14 @@ int main(void)
 
 
 	  char tipo[3];
-		  for(int i =0;i<nData;i++){
-				  if (i==0 || i==10){
-					  strcpy(tipo,"val");
-				  } else{
-					  strcpy(tipo,"txt");
-				  }
-				  NEXTION_SendString((char*)names[i],(char*)datas[i],tipo);
+	  for(int i =0;i<nData;i++){
+			  if (i==0 || i==10){
+				  strcpy(tipo,"val");
+			  } else{
+				  strcpy(tipo,"txt");
 			  }
+			  NEXTION_SendString((char*)names[i],(char*)data[i],tipo);
+		  }
   }
   /* USER CODE END 3 */
 }
@@ -316,14 +399,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : B1_button_Pin */
-  GPIO_InitStruct.Pin = B1_button_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(B1_button_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : B2_button_Pin B3_button_Pin */
-  GPIO_InitStruct.Pin = B2_button_Pin|B3_button_Pin;
+  /*Configure GPIO pins : B1_button_Pin B2_button_Pin B3_button_Pin */
+  GPIO_InitStruct.Pin = B1_button_Pin|B2_button_Pin|B3_button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
