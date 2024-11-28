@@ -1,0 +1,5 @@
+../Core/Src/main.c:122:5:main	13
+../Core/Src/main.c:269:6:SystemClock_Config	4
+../Core/Src/main.c:310:6:NEXTION_SendString	4
+../Core/Src/main.c:352:5:primoNumeroDecimale	3
+../Core/Src/main.c:367:6:Error_Handler	1

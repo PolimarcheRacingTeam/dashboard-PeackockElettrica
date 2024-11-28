@@ -1,0 +1,393 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "can.h"
+#include "usart.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <string.h>
+#include <stdlib.h>
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+
+//daeliminare
+int chiamata=0;
+int flagU11 = 0;
+int flagU12 = 0;
+char msgU11[40] = " ";
+char msgU12[40] = " ";
+int ind = 0;
+uint16_t freniData = 1;
+uint16_t r2dData = 0;
+uint16_t mapData = 0;
+CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
+CAN_FilterTypeDef can_filter;
+CAN_RxHeaderTypeDef RxHeader;
+uint32_t TxMailbox;
+
+uint16_t vehicleSpeed;
+uint16_t tempBatteries;
+uint16_t voltBattery;	//lo considero intero (moltiplicato *10 quando arriva)
+uint16_t tempMot1;
+uint16_t tempMot2;
+uint16_t tempAvgMot;
+uint16_t tempInverter1;
+uint16_t tempInverter2;
+uint16_t tempAvgInverter;
+uint16_t statoBatteria;
+
+//nomi delle variabili degli elementi sul nextion (manca il r2d,caso particolare)
+char names[Ndata][50]= {"page","speed_value.txt","battery_temp2.txt","lv_battery.txt","engine_tempLX2.txt","engine_tempRX2.txt","engine_temp1.txt","inverter_temp1.txt","engine_mod.txt","battery_bar.val"};
+uint16_t currentPageDisplay = 0;
+uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
+char pageDisplayArray[][5] = {"main","temp"};
+
+uint8_t flags[Ndata];
+uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
+uint32_t lastMillis[Ndata];
+uint16_t* arrayData[Ndata] = {&currentPageDisplay,&vehicleSpeed,&tempBatteries,&voltBattery,&tempMot1,&tempMot2,&tempAvgMot,&tempAvgInverter,&mapData,&statoBatteria,&r2dData};
+//arrayData = array di PUNTATORI delle variabili contenenti i dati
+/*
+arrayData[0] = currentPage del display
+arrayData[1] = vehicleSpeed
+arrayData[2] = temperatura batterie
+arrayData[3] = voltaggio batterie
+arrayData[4] = tempMotore 1 SINISTRA
+arrayData[5] = tempMotore 2 DESTRA	//si aggiornano insieme
+arrayData[6] = temperatura media motore
+arrayData[7] = tempAvgInverter
+arrayData[8] = mappa
+arrayData[9] = Stato Batteria (in percentuale)
+arrayData[10] = r2d
+CASI PARTICOLARI POSIZONI = 9,10 ->  statoBatteria = intero | r2d = mostrare/nascondere
+PAGINA 1 POSIZONI = 1,3,6,8,9,10	//page non appartiene a nessuna pagina
+PAGINA 2 POSIZIONI = 2,4,5,7
+ * */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+	int len;
+	int speed = 0;
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_CAN_Init();
+  MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
+  /* USER CODE BEGIN 2 */
+  //SETUP CAN
+
+  //filtro CAN --> Serve per far funzionare il CANBUS (obbligatorio) --> Isola messaggio che non hanno id/maschera che mi interessa
+  //tutti a 0 = non filtra niente
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+  can_filter.FilterIdHigh = 0;
+  can_filter.FilterIdLow = 0;
+  can_filter.FilterMaskIdHigh = 0; // Maschera per coprire l'intervallo da 0x012 a 0x053  sFilterConfig.FilterMaskIdLow = 0;
+  can_filter.FilterMaskIdLow = 0;
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK; // Modalità maschera
+  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;	//CAN_FILTER_FIFO0
+  can_filter.FilterActivation = ENABLE;
+  can_filter.FilterBank = 0;
+  HAL_CAN_ConfigFilter(&hcan, &can_filter);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  if(HAL_CAN_ConfigFilter(&hcan, &can_filter)!= HAL_OK){
+	  Error_Handler();
+  }
+  HAL_CAN_Start(&hcan);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  r2dTxHeader.DLC = 1;	//numero byte che deve mandare (in questo caso basterebbe un bit)
+  r2dTxHeader.StdId = 0x016; //id pacchetto
+  r2dTxHeader.IDE = CAN_ID_STD;
+  r2dTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
+
+  mapTxHeader.DLC = 1;		//Numero byte messaggio, da 1 a 8
+  mapTxHeader.StdId = 0x040; // Standard Identifier, va da 0 a 0x7FF (11bit)
+  mapTxHeader.IDE = CAN_ID_STD;	//Indirizzi standard (=0) e non extended
+  mapTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
+
+  HAL_Delay(100);
+  uint32_t currMillis = HAL_GetTick();
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+
+
+  while (1)
+  {
+	  //CODICE PER GENERARE DATI FITTIZI
+
+	 /* *arrayData[1] = rand()%200;			//speed
+	  *arrayData[2] = rand()%100;				//temp batt
+	  *arrayData[3] = rand()%15;				//lv batter
+	  *arrayData[4] = rand()%100;			//temp sx engine
+	  *arrayData[5] = rand()%100;			//temp dx engine
+	  *arrayData[6] = rand()%100;			//temp engine
+	  *arrayData[7] = rand()%100;			//temp inver
+	  *arrayData[8] = rand()%3 +1;					//mappa
+	  *arrayData[9] = rand()%100;					//statoBatterya
+	  *arrayData[10] = rand()%2 ;					//r2d
+*/
+	  if(flagU11){
+		  len = sprintf(msgU11,"PULSANTE 1");
+			HAL_UART_Transmit(&huart1,(uint8_t*)msgU11,len,HAL_MAX_DELAY);
+	  flagU11=0;}
+
+	  if(flagU12){
+		  len = sprintf(msgU11,"PULSANTE 2");
+			HAL_UART_Transmit(&huart1,(uint8_t*)msgU12,len,HAL_MAX_DELAY);
+	  flagU12=0;}
+
+	  if(flags[0]==1){
+			char msg[15] = " ";
+			len = sprintf(msg,"page %d",*pageDisplayArray[currentPageDisplay]);
+			HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+			flags[0]=0;
+	  }
+
+	  for(uint8_t i=1;i<Ndata;i++ ){
+		  flags[i]=1;	//da togliere
+		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){
+			  //mandare al nextion
+			  NEXTION_SendString(names[i], *arrayData[i], i);
+			  flags[i] = 0;
+			  lastMillis[i] = HAL_GetTick();
+			  if(i==7 && flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//situazione inverter ma pag. temp
+				  NEXTION_SendString("inverter_temp1.txt",*arrayData[i],i);
+				  flags[i] = 0;
+				  lastMillis[i] = HAL_GetTick();
+			  }
+		  }
+	  }
+
+	 /* if (tempo > 50){
+			if(currentPageDisplay == 0){
+				currentPageDisplay = 1;
+			} else if (currentPageDisplay == 1){
+				currentPageDisplay = 0;
+			}
+			flags[0] = 1;
+			for(int i = 1;i<Ndata;i++){
+				active[i] = !active[i];
+				if (active[1]==1){
+					flags[i] = 1;
+				}
+			}
+			flags[0] = 1;
+			tempo=0;
+	  }*/
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+	  HAL_Delay(200);
+	  //tempo++;
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+//comunica con il nextion, inva messaggi tipo "oggetto.txt/val = {valore}" + 3volte comando 0xFF per eseguire
+void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può essere txt o val
+	char buff[50];
+	int len;
+	if (index == 9){	//battery bar value
+		len = sprintf(buff,"%s=%d",elemento,valore);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+	} else if (index == 10){	//r2d
+		//lascia la gestione grafica al Nextion
+		HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+		len = sprintf(buff,"readyToDrive.val=%d",r2dData);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		/*
+		if(r2dData==0){
+			len = sprintf(buff,"vis rtd_red,1");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+			len = sprintf(buff,"vis rtd_green,0");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		}
+		else{
+			len = sprintf(buff,"vis rtd_red,0");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+			len = sprintf(buff,"vis rtd_green,1");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		}*/
+	}else{
+		if(index==3){	//voltage battery -> float ma intero
+			len = sprintf(buff,"%s=\"%d\".\"%d\"V",elemento,(int)(valore/10),primoNumeroDecimale(valore/10));
+		}
+		else{
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+		}
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+	}
+}
+
+int primoNumeroDecimale(int numero){
+	if(numero<0){
+		numero =-numero;
+	}
+	while(numero>=10){
+		numero/=10;
+	}
+	return numero;
+}
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */

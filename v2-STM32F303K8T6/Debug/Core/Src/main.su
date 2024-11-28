@@ -1,0 +1,5 @@
+../Core/Src/main.c:122:5:main	48	static
+../Core/Src/main.c:269:6:SystemClock_Config	96	static
+../Core/Src/main.c:310:6:NEXTION_SendString	96	static
+../Core/Src/main.c:352:5:primoNumeroDecimale	16	static
+../Core/Src/main.c:367:6:Error_Handler	4	static,ignoring_inline_asm
