@@ -46,6 +46,8 @@ Domande:
 -r2d -> se premo una volta si attiva (se anche freni...), se premo nuovamente si spegne(..)?
 -ID-CAN Stato di carica?
 
+++ID PER ASMS On, ++ID per TS Active
+
 
 DA PROVARE:
 -pulsante r2d
