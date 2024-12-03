@@ -206,12 +206,14 @@ void EXTI4_IRQHandler(void)
   /* USER CODE BEGIN EXTI4_IRQn 0 */
 	//callback fucntion per r2d buttton
 	  // Verifica ogni pin EXTI tra 5 e 9 che potrebbe aver causato l'interrupt
+
 	  if (EXTI->PR & (1 << 4)) {  // Linea EXTI5
 	    HAL_GPIO_EXTI_IRQHandler(r2dButton_Pin);
 	    EXTI->PR = (1 << 4);  // Pulisce il bit di pending
 	  }
+
   /* USER CODE END EXTI4_IRQn 0 */
-  //HAL_GPIO_EXTI_IRQHandler(r2dButton_Pin);
+  HAL_GPIO_EXTI_IRQHandler(r2dButton_Pin);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
   /* USER CODE END EXTI4_IRQn 1 */
 }
@@ -236,6 +238,7 @@ void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 	  // Verifica ogni pin EXTI tra 5 e 9 che potrebbe aver causato l'interrupt
+	/*
 	  if (EXTI->PR & (1 << 5)) {  // Linea EXTI5
 	    HAL_GPIO_EXTI_IRQHandler(nextPageButton_Pin);
 	    EXTI->PR = (1 << 5);  // Pulisce il bit di pending
@@ -248,10 +251,11 @@ void EXTI9_5_IRQHandler(void)
 	    HAL_GPIO_EXTI_IRQHandler(button3_Pin);
 	    EXTI->PR = (1 << 7);  // Pulisce il bit di pending
 	  }
+	  */
   /* USER CODE END EXTI9_5_IRQn 0 */
-  //HAL_GPIO_EXTI_IRQHandler(nextPageButton_Pin);
-  //HAL_GPIO_EXTI_IRQHandler(button2_Pin);
-  //HAL_GPIO_EXTI_IRQHandler(button3_Pin);
+  HAL_GPIO_EXTI_IRQHandler(nextPageButton_Pin);
+  HAL_GPIO_EXTI_IRQHandler(button2_Pin);
+  HAL_GPIO_EXTI_IRQHandler(button3_Pin);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
   /* USER CODE END EXTI9_5_IRQn 1 */
 }

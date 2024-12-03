@@ -49,11 +49,6 @@
 /* USER CODE BEGIN PV */
 
 //daeliminare
-int chiamata=0;
-int flagU11 = 0;
-int flagU12 = 0;
-char msgU11[40] = " ";
-char msgU12[40] = " ";
 int ind = 0;
 uint16_t freniData = 1;
 uint16_t r2dData = 0;
@@ -65,7 +60,7 @@ uint32_t TxMailbox;
 
 uint16_t vehicleSpeed;
 uint16_t tempBatteries;
-uint16_t voltBattery;	//lo considero intero (moltiplicato *10 quando arriva)
+uint16_t voltBattery = 0;	//lo considero intero (moltiplicato *10 quando arriva)
 uint16_t tempMot1;
 uint16_t tempMot2;
 uint16_t tempAvgMot;
@@ -80,6 +75,8 @@ uint16_t currentPageDisplay = 0;
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 char pageDisplayArray[][5] = {"main","temp"};
 
+
+uint8_t flagMap=0;
 uint8_t flags[Ndata];
 uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
 uint32_t lastMillis[Ndata];
@@ -106,6 +103,7 @@ PAGINA 2 POSIZIONI = 2,4,5,7
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -124,7 +122,11 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 	int len;
-	int speed = 0;
+
+	char msg2[9] = " ";
+	len = sprintf(msg2,"page temp");
+	HAL_UART_Transmit(&huart2,(uint8_t*)msg2,len,HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -147,7 +149,9 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_USART2_UART_Init();
-  MX_USART1_UART_Init();
+
+  /* Initialize interrupts */
+  MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   //SETUP CAN
 
@@ -181,8 +185,11 @@ int main(void)
   mapTxHeader.IDE = CAN_ID_STD;	//Indirizzi standard (=0) e non extended
   mapTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
 
+
+  int tempo=0;
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
+  char msg[40] = " ";
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -192,8 +199,8 @@ int main(void)
   while (1)
   {
 	  //CODICE PER GENERARE DATI FITTIZI
-
-	 /* *arrayData[1] = rand()%200;			//speed
+/*
+	  *arrayData[1] = rand()%200;			//speed
 	  *arrayData[2] = rand()%100;				//temp batt
 	  *arrayData[3] = rand()%15;				//lv batter
 	  *arrayData[4] = rand()%100;			//temp sx engine
@@ -201,62 +208,65 @@ int main(void)
 	  *arrayData[6] = rand()%100;			//temp engine
 	  *arrayData[7] = rand()%100;			//temp inver
 	  *arrayData[8] = rand()%3 +1;					//mappa
-	  *arrayData[9] = rand()%100;					//statoBatterya
+	  *arrayData[9] = rand()%100;					//statoBatteria
 	  *arrayData[10] = rand()%2 ;					//r2d
 */
-	  if(flagU11){
-		  len = sprintf(msgU11,"PULSANTE 1");
-			HAL_UART_Transmit(&huart1,(uint8_t*)msgU11,len,HAL_MAX_DELAY);
-	  flagU11=0;}
-
-	  if(flagU12){
-		  len = sprintf(msgU11,"PULSANTE 2");
-			HAL_UART_Transmit(&huart1,(uint8_t*)msgU12,len,HAL_MAX_DELAY);
-	  flagU12=0;}
-
+	  //daTogliere
+	  *arrayData[1] = tempo;
+	  if(tempo>3){
+		  tempo=0;
+		  currentPageDisplay=!currentPageDisplay;
+		  flags[0] = 1;
+		  *arrayData[8] = currentPageDisplay;
+	  }
 	  if(flags[0]==1){
-			char msg[15] = " ";
-			len = sprintf(msg,"page %d",*pageDisplayArray[currentPageDisplay]);
+			char msg[30] = " ";
+			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
 			HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			flags[0]=0;
 	  }
 
+
 	  for(uint8_t i=1;i<Ndata;i++ ){
-		  flags[i]=1;	//da togliere
-		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){
+		  //daTogliere
+		  flags[i]=1;
+		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna
 			  //mandare al nextion
 			  NEXTION_SendString(names[i], *arrayData[i], i);
 			  flags[i] = 0;
 			  lastMillis[i] = HAL_GetTick();
-			  if(i==7 && flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//situazione inverter ma pag. temp
-				  NEXTION_SendString("inverter_temp1.txt",*arrayData[i],i);
-				  flags[i] = 0;
-				  lastMillis[i] = HAL_GetTick();
-			  }
 		  }
 	  }
 
-	 /* if (tempo > 50){
-			if(currentPageDisplay == 0){
-				currentPageDisplay = 1;
-			} else if (currentPageDisplay == 1){
-				currentPageDisplay = 0;
-			}
-			flags[0] = 1;
-			for(int i = 1;i<Ndata;i++){
-				active[i] = !active[i];
-				if (active[1]==1){
-					flags[i] = 1;
-				}
-			}
-			flags[0] = 1;
-			tempo=0;
-	  }*/
+	  if (flagMap){
+		  //invio Nextion
+		  len = sprintf(msg,"newMapTxtValue.txt=\"%d\"",*arrayData[8]);
+		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		  len = sprintf(msg,"vis newMapTxtValue,1");
+		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		  len = sprintf(msg,"vis newMapTxt,1");
+		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		  len = sprintf(msg,"vis mapBg,1");
+		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		  len = sprintf(msg,"tmNewMap.en=1");
+		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		  //invio CAN
+		  HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &mapData, &TxMailbox);
+
+	  }
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_Delay(200);
+	  tempo++;
+	  HAL_Delay(500);
 	  //tempo++;
   }
   /* USER CODE END 3 */
@@ -270,7 +280,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -297,12 +306,23 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
+}
+
+/**
+  * @brief NVIC Configuration.
+  * @retval None
+  */
+static void MX_NVIC_Init(void)
+{
+  /* EXTI9_5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+  /* EXTI4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  /* CAN_RX0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CAN_RX0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(CAN_RX0_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
@@ -314,13 +334,20 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		len = sprintf(buff,"%s=%d",elemento,valore);
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-	} else if (index == 10){	//r2d
-		//lascia la gestione grafica al Nextion
-		HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
-		len = sprintf(buff,"readyToDrive.val=%d",r2dData);
+		if(valore < 15){
+			len = sprintf(buff,"battery_bar.pco=59392");
+		} else if (valore> 50){
+			len = sprintf(buff,"battery_bar.pco=1796");
+		} else{
+			len = sprintf(buff,"battery_bar.pco=65504");
+		}
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		/*
+	} else if (index == 10){	//r2d
+		HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+		//len = sprintf(buff,"readyToDrive.val=%d",r2dData);
+		//HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		//HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		if(r2dData==0){
 			len = sprintf(buff,"vis rtd_red,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
@@ -336,27 +363,17 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			len = sprintf(buff,"vis rtd_green,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		}*/
+		}
 	}else{
 		if(index==3){	//voltage battery -> float ma intero
-			len = sprintf(buff,"%s=\"%d\".\"%d\"V",elemento,(int)(valore/10),primoNumeroDecimale(valore/10));
+			len = sprintf(buff,"%s=\"%d.%dV\"",elemento,(int)(valore),(int)(valore/10));
 		}
-		else{
+		else{//caso generale
 			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
 		}
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 	}
-}
-
-int primoNumeroDecimale(int numero){
-	if(numero<0){
-		numero =-numero;
-	}
-	while(numero>=10){
-		numero/=10;
-	}
-	return numero;
 }
 /* USER CODE END 4 */
 

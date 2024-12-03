@@ -46,39 +46,46 @@ void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = r2dButton_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(r2dButton_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SR_DATA_GPIO_Port, SR_DATA_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = nextPageButton_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(nextPageButton_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, SR_LATCH_Pin|SR_CLOCK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = button2_Pin|button3_Pin;
+  GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  /*Configure GPIO pins : PAPin PAPin */
+  GPIO_InitStruct.Pin = button2_Pin|button3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = SR_DATA_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SR_DATA_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PBPin PBPin */
+  GPIO_InitStruct.Pin = SR_LATCH_Pin|SR_CLOCK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == r2dButton_Pin){
-		if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_SET){
-			flagU11=1;
+		if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
 			//pulsante premuto<<
 			if(freniData && !r2dData){
 				r2dData = 1;
@@ -90,28 +97,26 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		} else{
 			//scrivere qua se si vuole tenere il r2d accessibile solo se mentre si preme il tasto
 		}
-		chiamata++;
-		*arrayData[1]=chiamata;
-		flags[1]=1;
 	} else if (GPIO_Pin == nextPageButton_Pin){
-		if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port, nextPageButton_Pin) == GPIO_PIN_SET){
-			flagU12 = 1;
+		if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port, nextPageButton_Pin) == GPIO_PIN_RESET){
 			if(currentPageDisplay == 0){
 				currentPageDisplay = 1;
 			} else if (currentPageDisplay == 1){
 				currentPageDisplay = 0;
 			}
 			for(int i = 1;i<Ndata;i++){
-				active[i] = !active[i];
+				if (active[i]==1){
+					active[1] = 0;
+				} else if (active[i]==0){
+					active[i] = 1;
+				}
 				if (active[1]==1){
 					flags[i] = 1;
 				}
 			}
 			flags[0] = 1;
 			}
-		chiamata++;
-		*arrayData[1]=104;
-		flags[1]=1;
+
 		//comando per visualizzare pagina successiva
 	} else if (GPIO_Pin == button2_Pin){
 		//gestione pulsante 2

@@ -69,12 +69,14 @@ void Error_Handler(void);
 #define button3_Pin GPIO_PIN_7
 #define button3_GPIO_Port GPIOA
 #define button3_EXTI_IRQn EXTI9_5_IRQn
+#define SR_DATA_Pin GPIO_PIN_15
+#define SR_DATA_GPIO_Port GPIOA
+#define SR_LATCH_Pin GPIO_PIN_3
+#define SR_LATCH_GPIO_Port GPIOB
+#define SR_CLOCK_Pin GPIO_PIN_4
+#define SR_CLOCK_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-extern int flagU11;
-extern int flagU12;
-extern char msgU11[40];
-extern char msgU12[40];
 extern int chiamata;
 
 #define Ndata 11 //numero dati totale da visualizzare su display
