@@ -41,7 +41,7 @@ void MX_CAN_Init(void)
   hcan.Init.Prescaler = 16;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
@@ -158,7 +158,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		break;}
 	case 0x052:
 		if(RxHeader->DLC =4){
-		voltBattery = (uint16_t)((buf[0] | (buf[1]<<8))*10);
+		voltBattery = (uint16_t)((buf[0] | (buf[1]<<8)));
 		flags[3] = 1;
 		}
     }

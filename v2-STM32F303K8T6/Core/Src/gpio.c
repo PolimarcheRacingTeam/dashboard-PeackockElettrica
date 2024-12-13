@@ -45,35 +45,32 @@ void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SR_DATA_GPIO_Port, SR_DATA_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SR_LATCH_Pin|SR_CLOCK_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PAPin PAPin */
+  /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin */
   GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin */
+  /*Configure GPIO pins : button2_Pin button3_Pin */
   GPIO_InitStruct.Pin = button2_Pin|button3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : SR_DATA_Pin */
   GPIO_InitStruct.Pin = SR_DATA_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SR_DATA_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin */
+  /*Configure GPIO pins : SR_LATCH_Pin SR_CLOCK_Pin */
   GPIO_InitStruct.Pin = SR_LATCH_Pin|SR_CLOCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -90,15 +87,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			if(freniData && !r2dData){
 				r2dData = 1;
 				flags[10] = 1;
+
 			} else if(freniData && r2dData){
 				r2dData = 0;
 				flags[10] = 1;
+
+				*arrayData[1] = 100;
+					flags[1]=1;
 			}
-		} else{
-			//scrivere qua se si vuole tenere il r2d accessibile solo se mentre si preme il tasto
 		}
-	} else if (GPIO_Pin == nextPageButton_Pin){
+	}
+
+	if (GPIO_Pin == nextPageButton_Pin){
 		if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port, nextPageButton_Pin) == GPIO_PIN_RESET){
+			if (pageRefreshata){
+				pageRefreshata=0;
 			if(currentPageDisplay == 0){
 				currentPageDisplay = 1;
 			} else if (currentPageDisplay == 1){
@@ -114,8 +117,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					flags[i] = 1;
 				}
 			}
+			*arrayData[7] = currentPageDisplay;
+			flags[7] = 1;
 			flags[0] = 1;
-			}
+			flagMapPopup = 0;
+			}}
 
 		//comando per visualizzare pagina successiva
 	} else if (GPIO_Pin == button2_Pin){

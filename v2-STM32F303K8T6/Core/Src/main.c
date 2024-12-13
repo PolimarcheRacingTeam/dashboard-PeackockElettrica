@@ -19,11 +19,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "shift_register.h"
+#include "tim.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -52,7 +55,7 @@
 int ind = 0;
 uint16_t freniData = 1;
 uint16_t r2dData = 0;
-uint16_t mapData = 0;
+uint16_t mapData = 2;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 CAN_FilterTypeDef can_filter;
 CAN_RxHeaderTypeDef RxHeader;
@@ -68,6 +71,7 @@ uint16_t tempInverter1;
 uint16_t tempInverter2;
 uint16_t tempAvgInverter;
 uint16_t statoBatteria;
+uint8_t pageRefreshata = 1;
 
 //nomi delle variabili degli elementi sul nextion (manca il r2d,caso particolare)
 char names[Ndata][50]= {"page","speed_value.txt","battery_temp2.txt","lv_battery.txt","engine_tempLX2.txt","engine_tempRX2.txt","engine_temp1.txt","inverter_temp1.txt","engine_mod.txt","battery_bar.val"};
@@ -76,7 +80,7 @@ uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 char pageDisplayArray[][5] = {"main","temp"};
 
 
-uint8_t flagMap=0;
+uint8_t flagMapPopup=0; // per evitare di aggioranre i dati sottostanti al popup nella pagina "main"
 uint8_t flags[Ndata];
 uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
 uint32_t lastMillis[Ndata];
@@ -124,9 +128,6 @@ int main(void)
 	int len;
 
 	char msg2[9] = " ";
-	len = sprintf(msg2,"page temp");
-	HAL_UART_Transmit(&huart2,(uint8_t*)msg2,len,HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -149,6 +150,8 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_USART2_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -157,23 +160,22 @@ int main(void)
 
   //filtro CAN --> Serve per far funzionare il CANBUS (obbligatorio) --> Isola messaggio che non hanno id/maschera che mi interessa
   //tutti a 0 = non filtra niente
-  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+  can_filter.FilterActivation = ENABLE;
+  can_filter.FilterBank = 0;
+  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;	//CAN_FILTER_FIFO0
   can_filter.FilterIdHigh = 0;
   can_filter.FilterIdLow = 0;
   can_filter.FilterMaskIdHigh = 0; // Maschera per coprire l'intervallo da 0x012 a 0x053  sFilterConfig.FilterMaskIdLow = 0;
   can_filter.FilterMaskIdLow = 0;
-  can_filter.FilterMode = CAN_FILTERMODE_IDMASK; // Modalità maschera
-  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;	//CAN_FILTER_FIFO0
-  can_filter.FilterActivation = ENABLE;
-  can_filter.FilterBank = 0;
-  HAL_CAN_ConfigFilter(&hcan, &can_filter);
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
   if(HAL_CAN_ConfigFilter(&hcan, &can_filter)!= HAL_OK){
 	  Error_Handler();
   }
   HAL_CAN_Start(&hcan);
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  if(HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)!= HAL_OK){
+	  Error_Handler();
+  }
 
   r2dTxHeader.DLC = 1;	//numero byte che deve mandare (in questo caso basterebbe un bit)
   r2dTxHeader.StdId = 0x016; //id pacchetto
@@ -199,7 +201,7 @@ int main(void)
   while (1)
   {
 	  //CODICE PER GENERARE DATI FITTIZI
-/*
+
 	  *arrayData[1] = rand()%200;			//speed
 	  *arrayData[2] = rand()%100;				//temp batt
 	  *arrayData[3] = rand()%15;				//lv batter
@@ -207,58 +209,46 @@ int main(void)
 	  *arrayData[5] = rand()%100;			//temp dx engine
 	  *arrayData[6] = rand()%100;			//temp engine
 	  *arrayData[7] = rand()%100;			//temp inver
-	  *arrayData[8] = rand()%3 +1;					//mappa
+	  //*arrayData[8] = rand()%3 +1;					//mappa
 	  *arrayData[9] = rand()%100;					//statoBatteria
-	  *arrayData[10] = rand()%2 ;					//r2d
-*/
+	  //*arrayData[10] = rand()%2 ;					//r2d
+
+
 	  //daTogliere
-	  *arrayData[1] = tempo;
-	  if(tempo>3){
+	  //*arrayData[1] = tempo;
+	  /*
+	  if(tempo>10){
 		  tempo=0;
 		  currentPageDisplay=!currentPageDisplay;
 		  flags[0] = 1;
 		  *arrayData[8] = currentPageDisplay;
-	  }
+	  }*/
 	  if(flags[0]==1){
 			char msg[30] = " ";
 			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
 			HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			flags[0]=0;
+			HAL_Delay(70);
+			pageRefreshata=1;
 	  }
-
 
 	  for(uint8_t i=1;i<Ndata;i++ ){
 		  //daTogliere
 		  flags[i]=1;
 		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna
+			  if (i==8){
+				  continue;
+			  }
+			  if (flagMapPopup && (i==7 || i==6 || i==3)){
+				  continue;
+			  }
 			  //mandare al nextion
 			  NEXTION_SendString(names[i], *arrayData[i], i);
 			  flags[i] = 0;
 			  lastMillis[i] = HAL_GetTick();
+			  HAL_Delay(1);
 		  }
-	  }
-
-	  if (flagMap){
-		  //invio Nextion
-		  len = sprintf(msg,"newMapTxtValue.txt=\"%d\"",*arrayData[8]);
-		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
-		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-		  len = sprintf(msg,"vis newMapTxtValue,1");
-		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
-		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-		  len = sprintf(msg,"vis newMapTxt,1");
-		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
-		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-		  len = sprintf(msg,"vis mapBg,1");
-		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
-		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-		  len = sprintf(msg,"tmNewMap.en=1");
-		  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
-		  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-		  //invio CAN
-		  HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &mapData, &TxMailbox);
-
 	  }
 
 
@@ -266,8 +256,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  tempo++;
-	  HAL_Delay(500);
-	  //tempo++;
+	  HAL_Delay(200);  //tempo++;
   }
   /* USER CODE END 3 */
 }
@@ -280,6 +269,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -287,7 +277,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -297,12 +289,18 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
@@ -356,7 +354,7 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		}
-		else{
+		else if (r2dData==1){
 			len = sprintf(buff,"vis rtd_red,0");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
@@ -364,9 +362,19 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		}
-	}else{
+	HAL_Delay(10);
+	}
+	else if (index==7){
+		len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		len = sprintf(buff,"inverter_temp2.txt=\"%d\"",valore);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+	}
+	else{
 		if(index==3){	//voltage battery -> float ma intero
-			len = sprintf(buff,"%s=\"%d.%dV\"",elemento,(int)(valore),(int)(valore/10));
+			len = sprintf(buff,"%s=\"%dV\"",elemento,(int)(valore));
 		}
 		else{//caso generale
 			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
@@ -375,6 +383,9 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 	}
 }
+
+
+
 /* USER CODE END 4 */
 
 /**

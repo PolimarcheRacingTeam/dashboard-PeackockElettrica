@@ -90,6 +90,7 @@ extern CAN_RxHeaderTypeDef RxHeader;
 extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
+extern uint8_t pageRefreshata;
 
 extern uint16_t vehicleSpeed;
 extern uint16_t tempBatteries;
@@ -108,6 +109,7 @@ extern char pageDisplayArray[][5];
 extern uint8_t flags[Ndata];	//struttura che contiene i flag dei valori che si sono aggiornati
 extern uint8_t active[Ndata];
 extern uint16_t* arrayData[Ndata];
+extern uint8_t flagMapPopup;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
