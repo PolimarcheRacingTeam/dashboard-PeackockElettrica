@@ -79,8 +79,10 @@ uint16_t currentPageDisplay = 0;
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 char pageDisplayArray[][5] = {"main","temp"};
 
+//daTogliere ->
+uint8_t flagMapPopupActive=0; // per evitare di aggioranre i dati sottostanti al popup nella pagina "main"
+uint8_t flagMapPopupHide = 0;
 
-uint8_t flagMapPopup=0; // per evitare di aggioranre i dati sottostanti al popup nella pagina "main"
 uint8_t flags[Ndata];
 uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
 uint32_t lastMillis[Ndata];
@@ -150,8 +152,8 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_USART2_UART_Init();
-  MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -192,6 +194,7 @@ int main(void)
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
   char msg[40] = " ";
+  HAL_TIM_Base_Start(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -202,7 +205,7 @@ int main(void)
   {
 	  //CODICE PER GENERARE DATI FITTIZI
 
-	  *arrayData[1] = rand()%200;			//speed
+	  //*arrayData[1] = rand()%200;			//speed
 	  *arrayData[2] = rand()%100;				//temp batt
 	  *arrayData[3] = rand()%15;				//lv batter
 	  *arrayData[4] = rand()%100;			//temp sx engine
@@ -216,13 +219,12 @@ int main(void)
 
 	  //daTogliere
 	  //*arrayData[1] = tempo;
-	  /*
-	  if(tempo>10){
-		  tempo=0;
-		  currentPageDisplay=!currentPageDisplay;
-		  flags[0] = 1;
-		  *arrayData[8] = currentPageDisplay;
-	  }*/
+
+	  if (tempo==50){
+		  //checkMapValue();
+		  tempo =0;
+	  }
+
 	  if(flags[0]==1){
 			char msg[30] = " ";
 			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
@@ -238,9 +240,6 @@ int main(void)
 		  flags[i]=1;
 		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna
 			  if (i==8){
-				  continue;
-			  }
-			  if (flagMapPopup && (i==7 || i==6 || i==3)){
 				  continue;
 			  }
 			  //mandare al nextion
@@ -269,7 +268,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -295,12 +293,6 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_TIM1;
-  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

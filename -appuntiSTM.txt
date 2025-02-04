@@ -50,8 +50,6 @@ Domande:
 
 
 DA PROVARE:
--pulsante r2d
--pulsante cambiaPagina 
 -CAN-BUS
--iterazione di flag/attive
+-SHIFT-REGISTER
 	

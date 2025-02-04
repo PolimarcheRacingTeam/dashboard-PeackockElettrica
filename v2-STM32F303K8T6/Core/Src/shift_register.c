@@ -42,13 +42,14 @@ int determineSituation(uint8_t data) {
 }
 
 //controlla il valore della mappa impostato sul "manettino" e se è diversa lo invia al can e fa apparire il popup sul display
-void checkMapValue(void){
+int checkMapValue(void){
 	uint16_t newData = determineSituation(readShiftRegister());
+	//newData = rand()%6 + 1;
 	if (mapData!=newData){
 		mapData = newData;
 		HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &mapData, &TxMailbox);
-		char msg[25] = " ";
-		int len;
+		return 1;
+		/*
 		if (currentPageDisplay == 0){
 			len = sprintf(msg,"vis mapBgMain,1");
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
@@ -71,16 +72,16 @@ void checkMapValue(void){
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		}
-
+		*/
+		/*
+		__HAL_TIM_SET_COUNTER(&htim2,0);
+	    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE); // Cancella il flag di update
 		HAL_TIM_Base_Start_IT(&htim2);
-
-
-
-
+		*/
 		//popuo attivo
 
-
 	}
+	return 0;
 }
 
 

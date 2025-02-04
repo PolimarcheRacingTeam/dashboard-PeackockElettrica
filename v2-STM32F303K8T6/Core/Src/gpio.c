@@ -91,9 +91,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			} else if(freniData && r2dData){
 				r2dData = 0;
 				flags[10] = 1;
-
-				*arrayData[1] = 100;
-					flags[1]=1;
 			}
 		}
 	}
@@ -117,10 +114,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					flags[i] = 1;
 				}
 			}
+			flags[10]=1;
 			*arrayData[7] = currentPageDisplay;
 			flags[7] = 1;
 			flags[0] = 1;
-			flagMapPopup = 0;
+			flagMapPopupActive = 0;
 			}}
 
 		//comando per visualizzare pagina successiva
