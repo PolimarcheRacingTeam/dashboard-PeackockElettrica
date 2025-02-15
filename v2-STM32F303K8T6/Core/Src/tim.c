@@ -43,7 +43,7 @@ void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 1599;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9999;
+  htim2.Init.Period = 49999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -85,7 +85,7 @@ void MX_TIM3_Init(void)
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 19999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -181,29 +181,31 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	if (htim->Instance == TIM2){
-		//checkMapValue();
-		//*arrayData[1] = 1;
-		if(checkMapValue()){
-			char msg[25] = " ";
+	if (flagOK){
+		if (htim->Instance == TIM2){
+			char msg[35] = " ";
 			int len;
-			len = sprintf(msg,"page MapPopUp");
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-			len = sprintf(msg,"mapValue.txt=\"%d\"",mapData);
+			if(checkMapValue()){
+				HAL_GPIO_EXTI_Callback(r2dButton_Pin);
+				len = sprintf(msg,"page MapPopUp");
+				HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(msg,"mapValue.txt=\"%d\"",*arrayData[8]);
+				HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+				HAL_TIM_Base_Start_IT(&htim3); //avvia timer in mode one-pulse
+			}
+		}
+		if(htim->Instance == TIM3){
+			char msg[30] = " ";
+			int len = 0;
+			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			HAL_TIM_Base_Start_IT(&htim3); //avvia timer in mode one-pulse
+			HAL_TIM_Base_Stop_IT(&htim3);
+			flags[8]=1;
+			flags[0]=1;
 		}
-	}
-	if(htim->Instance == TIM3){
-		char msg[30] = " ";
-		int len = 0;
-		len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
-		HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		//*arrayData[1] = 2;
-        HAL_TIM_Base_Stop_IT(&htim3);
 	}
 }
 /* USER CODE END 1 */

@@ -86,11 +86,19 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+	char msg[50];
+	int len;
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+	  /*
+	  len = sprintf(msg,"speed_value.txt=404");
+	  		HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+	  		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue*
+	          printf("Hard Fault!\n"); // Stampa un messaggio per capire se va in HardFault
+	          */
+
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }

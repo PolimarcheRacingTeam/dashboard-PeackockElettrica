@@ -109,8 +109,10 @@ extern char pageDisplayArray[][5];
 extern uint8_t flags[Ndata];	//struttura che contiene i flag dei valori che si sono aggiornati
 extern uint8_t active[Ndata];
 extern uint16_t* arrayData[Ndata];
-extern uint8_t flagMapPopupActive;
-extern uint8_t flagMapPopupHide;
+
+extern volatile uint8_t flagOK;
+extern uint8_t newData;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

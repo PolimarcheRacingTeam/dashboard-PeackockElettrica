@@ -53,15 +53,16 @@
 
 //daeliminare
 int ind = 0;
+volatile uint8_t flagOK = 0;
 uint16_t freniData = 1;
 uint16_t r2dData = 0;
-uint16_t mapData = 2;
+uint16_t mapData = 0;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 CAN_FilterTypeDef can_filter;
 CAN_RxHeaderTypeDef RxHeader;
 uint32_t TxMailbox;
 
-uint16_t vehicleSpeed;
+uint16_t vehicleSpeed = 0;
 uint16_t tempBatteries;
 uint16_t voltBattery = 0;	//lo considero intero (moltiplicato *10 quando arriva)
 uint16_t tempMot1;
@@ -72,16 +73,13 @@ uint16_t tempInverter2;
 uint16_t tempAvgInverter;
 uint16_t statoBatteria;
 uint8_t pageRefreshata = 1;
+uint8_t newData = 0;
 
 //nomi delle variabili degli elementi sul nextion (manca il r2d,caso particolare)
 char names[Ndata][50]= {"page","speed_value.txt","battery_temp2.txt","lv_battery.txt","engine_tempLX2.txt","engine_tempRX2.txt","engine_temp1.txt","inverter_temp1.txt","engine_mod.txt","battery_bar.val"};
 uint16_t currentPageDisplay = 0;
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 char pageDisplayArray[][5] = {"main","temp"};
-
-//daTogliere ->
-uint8_t flagMapPopupActive=0; // per evitare di aggioranre i dati sottostanti al popup nella pagina "main"
-uint8_t flagMapPopupHide = 0;
 
 uint8_t flags[Ndata];
 uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
@@ -127,9 +125,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	int len;
-
-	char msg2[9] = " ";
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -158,43 +153,13 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-  //SETUP CAN
-
-  //filtro CAN --> Serve per far funzionare il CANBUS (obbligatorio) --> Isola messaggio che non hanno id/maschera che mi interessa
-  //tutti a 0 = non filtra niente
-  can_filter.FilterActivation = ENABLE;
-  can_filter.FilterBank = 0;
-  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;	//CAN_FILTER_FIFO0
-  can_filter.FilterIdHigh = 0;
-  can_filter.FilterIdLow = 0;
-  can_filter.FilterMaskIdHigh = 0; // Maschera per coprire l'intervallo da 0x012 a 0x053  sFilterConfig.FilterMaskIdLow = 0;
-  can_filter.FilterMaskIdLow = 0;
-  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
-  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
-  if(HAL_CAN_ConfigFilter(&hcan, &can_filter)!= HAL_OK){
-	  Error_Handler();
-  }
-  HAL_CAN_Start(&hcan);
-  if(HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)!= HAL_OK){
-	  Error_Handler();
-  }
-
-  r2dTxHeader.DLC = 1;	//numero byte che deve mandare (in questo caso basterebbe un bit)
-  r2dTxHeader.StdId = 0x016; //id pacchetto
-  r2dTxHeader.IDE = CAN_ID_STD;
-  r2dTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
-
-  mapTxHeader.DLC = 1;		//Numero byte messaggio, da 1 a 8
-  mapTxHeader.StdId = 0x040; // Standard Identifier, va da 0 a 0x7FF (11bit)
-  mapTxHeader.IDE = CAN_ID_STD;	//Indirizzi standard (=0) e non extended
-  mapTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
-
-
+  CAN_setup();	//avvia il CAN + filtro
   int tempo=0;
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
   char msg[40] = " ";
-  HAL_TIM_Base_Start(&htim3);
+  HAL_TIM_Base_Start_IT(&htim2);
+  flagOK = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -202,10 +167,14 @@ int main(void)
 
 
   while (1)
-  {
-	  //CODICE PER GENERARE DATI FITTIZI
+  {	   currMillis = HAL_GetTick();
 
-	  //*arrayData[1] = rand()%200;			//speed
+  	  if(tempo == 50){
+  		  newData++;
+  		  tempo = 0;
+  	  }
+	  //CODICE PER GENERARE DATI FITTIZI
+	  *arrayData[1] = rand()%200;			//speed
 	  *arrayData[2] = rand()%100;				//temp batt
 	  *arrayData[3] = rand()%15;				//lv batter
 	  *arrayData[4] = rand()%100;			//temp sx engine
@@ -217,17 +186,9 @@ int main(void)
 	  //*arrayData[10] = rand()%2 ;					//r2d
 
 
-	  //daTogliere
-	  //*arrayData[1] = tempo;
-
-	  if (tempo==50){
-		  //checkMapValue();
-		  tempo =0;
-	  }
-
 	  if(flags[0]==1){
 			char msg[30] = " ";
-			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
+			int len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
 			HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			flags[0]=0;
@@ -238,10 +199,7 @@ int main(void)
 	  for(uint8_t i=1;i<Ndata;i++ ){
 		  //daTogliere
 		  flags[i]=1;
-		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna
-			  if (i==8){
-				  continue;
-			  }
+		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna (display)
 			  //mandare al nextion
 			  NEXTION_SendString(names[i], *arrayData[i], i);
 			  flags[i] = 0;
@@ -249,13 +207,11 @@ int main(void)
 			  HAL_Delay(1);
 		  }
 	  }
-
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 	  tempo++;
-	  HAL_Delay(200);  //tempo++;
+	  HAL_Delay(150);  //tempo++;
   }
   /* USER CODE END 3 */
 }
@@ -375,6 +331,8 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 	}
 }
+
+
 
 
 

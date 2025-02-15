@@ -41,46 +41,19 @@ int determineSituation(uint8_t data) {
     }
 }
 
-//controlla il valore della mappa impostato sul "manettino" e se è diversa lo invia al can e fa apparire il popup sul display
+//controlla il valore della mappa impostato sul "manettino" e se è diversa lo invia via can e mostra il popup sul display
 int checkMapValue(void){
-	uint16_t newData = determineSituation(readShiftRegister());
-	//newData = rand()%6 + 1;
-	if (mapData!=newData){
-		mapData = newData;
-		HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &mapData, &TxMailbox);
+	//uint16_t newData = determineSituation(readShiftRegister());
+	//daTogliere if flagMAPPA (una volta implementanto il manettino)
+	//uint16_t newData = *arrayData[8]+1;
+	if (*arrayData[8]!=newData){
+		*arrayData[8] = newData;
+		vehicleSpeed++;
+		HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &*arrayData[8], &TxMailbox);
 		return 1;
-		/*
-		if (currentPageDisplay == 0){
-			len = sprintf(msg,"vis mapBgMain,1");
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			len = sprintf(msg,"vis newMapValMain,1");
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			len = sprintf(msg,"newMapValMain.txt=\"%d\"",mapData);
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			len = sprintf(msg,"vis newMapTxtMain,1");
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		}
-		else if (currentPageDisplay==1){
-			len = sprintf(msg,"vis textMapPopup,1");
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			len = sprintf(msg,"textMapPopup.txt=\"MAP %d\"",mapData);
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		}
-		*/
-		/*
-		__HAL_TIM_SET_COUNTER(&htim2,0);
-	    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE); // Cancella il flag di update
-		HAL_TIM_Base_Start_IT(&htim2);
-		*/
-		//popuo attivo
-
 	}
+
+
 	return 0;
 }
 

@@ -118,8 +118,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			*arrayData[7] = currentPageDisplay;
 			flags[7] = 1;
 			flags[0] = 1;
-			flagMapPopupActive = 0;
-			}}
+			}
+		}
 
 		//comando per visualizzare pagina successiva
 	} else if (GPIO_Pin == button2_Pin){
