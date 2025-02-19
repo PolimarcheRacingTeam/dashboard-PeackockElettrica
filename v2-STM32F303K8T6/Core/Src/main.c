@@ -60,6 +60,7 @@ uint16_t mapData = 0;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 CAN_FilterTypeDef can_filter;
 CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
 uint32_t TxMailbox;
 
 uint16_t vehicleSpeed = 0;
@@ -74,17 +75,20 @@ uint16_t tempAvgInverter;
 uint16_t statoBatteria;
 uint8_t pageRefreshata = 1;
 uint8_t newData = 0;
+uint8_t flagError = 0;
+char errorName[20] = " ";
 
 //nomi delle variabili degli elementi sul nextion (manca il r2d,caso particolare)
-char names[Ndata][50]= {"page","speed_value.txt","battery_temp2.txt","lv_battery.txt","engine_tempLX2.txt","engine_tempRX2.txt","engine_temp1.txt","inverter_temp1.txt","engine_mod.txt","battery_bar.val"};
+char names[Ndata][50]= {"page","speed_value.txt","battery_temp2.txt","lv_battery.txt","engine_tempLX2.txt",
+		"engine_tempRX2.txt","engine_temp1.txt","inverter_temp1.txt","engine_mod.txt","battery_bar.val","error_id.txt"};
 uint16_t currentPageDisplay = 0;
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 char pageDisplayArray[][5] = {"main","temp"};
 
 uint8_t flags[Ndata];
-uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
+uint8_t active[Ndata] = {-1,1,0,1,0,0,1,0,1,1,1,1};	//indica se l'elemento è attivo. Attivo -> è presente nella pagina attuale.  Inizializzato con lo stato della pagina principale
 uint32_t lastMillis[Ndata];
-uint16_t* arrayData[Ndata] = {&currentPageDisplay,&vehicleSpeed,&tempBatteries,&voltBattery,&tempMot1,&tempMot2,&tempAvgMot,&tempAvgInverter,&mapData,&statoBatteria,&r2dData};
+uint16_t* arrayData[Ndata] = {&currentPageDisplay,&vehicleSpeed,&tempBatteries,&voltBattery,&tempMot1,&tempMot2,&tempAvgMot,&tempAvgInverter,&mapData,&statoBatteria,&r2dData,&flagError};
 //arrayData = array di PUNTATORI delle variabili contenenti i dati
 /*
 arrayData[0] = currentPage del display
@@ -98,6 +102,7 @@ arrayData[7] = tempAvgInverter
 arrayData[8] = mappa
 arrayData[9] = Stato Batteria (in percentuale)
 arrayData[10] = r2d
+arrayData[11] = errorID
 CASI PARTICOLARI POSIZONI = 9,10 ->  statoBatteria = intero | r2d = mostrare/nascondere
 PAGINA 1 POSIZONI = 1,3,6,8,9,10	//page non appartiene a nessuna pagina
 PAGINA 2 POSIZIONI = 2,4,5,7
@@ -147,7 +152,6 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN_Init();
   MX_USART2_UART_Init();
-  MX_TIM2_Init();
   MX_TIM3_Init();
 
   /* Initialize interrupts */
@@ -158,7 +162,6 @@ int main(void)
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
   char msg[40] = " ";
-  HAL_TIM_Base_Start_IT(&htim2);
   flagOK = 1;
   /* USER CODE END 2 */
 
@@ -169,21 +172,23 @@ int main(void)
   while (1)
   {	   currMillis = HAL_GetTick();
 
-  	  if(tempo == 50){
-  		  newData++;
+  	  /*
+  	  if(tempo == 100){
+  		  //CODICE PER GENERARE DATI FITTIZI
+  		  *arrayData[1] = rand()%200;			//speed
+  		  *arrayData[2] = rand()%100;				//temp batt
+  		  *arrayData[3] = rand()%15;				//lv batter
+  		  *arrayData[4] = rand()%100;			//temp sx engine
+  		  *arrayData[5] = rand()%100;			//temp dx engine
+  		  *arrayData[6] = rand()%100;			//temp engine
+  		  *arrayData[7] = rand()%100;			//temp inver
+  		  //*arrayData[8] = rand()%3 +1;					//mappa
+  		  //*arrayData[10] = rand()%2 ;
+  		  //newData++;
   		  tempo = 0;
-  	  }
-	  //CODICE PER GENERARE DATI FITTIZI
-	  *arrayData[1] = rand()%200;			//speed
-	  *arrayData[2] = rand()%100;				//temp batt
-	  *arrayData[3] = rand()%15;				//lv batter
-	  *arrayData[4] = rand()%100;			//temp sx engine
-	  *arrayData[5] = rand()%100;			//temp dx engine
-	  *arrayData[6] = rand()%100;			//temp engine
-	  *arrayData[7] = rand()%100;			//temp inver
-	  //*arrayData[8] = rand()%3 +1;					//mappa
-	  *arrayData[9] = rand()%100;					//statoBatteria
-	  //*arrayData[10] = rand()%2 ;					//r2d
+  	  }*/  		  *arrayData[9] = rand()%100;					//statoBatteria
+
+				//r2d
 
 
 	  if(flags[0]==1){
@@ -192,7 +197,7 @@ int main(void)
 			HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			flags[0]=0;
-			HAL_Delay(70);
+			HAL_Delay(30);
 			pageRefreshata=1;
 	  }
 
@@ -201,17 +206,24 @@ int main(void)
 		  flags[i]=1;
 		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna (display)
 			  //mandare al nextion
+			  if (i==8){
+				  MapValue();
+			  }
 			  NEXTION_SendString(names[i], *arrayData[i], i);
 			  flags[i] = 0;
 			  lastMillis[i] = HAL_GetTick();
-			  HAL_Delay(1);
+			  //HAL_Delay(1);
 		  }
+	  }
+
+	  if (vehicleSpeed <3){
+		  newData++;
 	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 	  tempo++;
-	  HAL_Delay(150);  //tempo++;
+	  //HAL_Delay(10);  //tempo++;
   }
   /* USER CODE END 3 */
 }
@@ -291,9 +303,6 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 	} else if (index == 10){	//r2d
 		HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
-		//len = sprintf(buff,"readyToDrive.val=%d",r2dData);
-		//HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
-		//HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		if(r2dData==0){
 			len = sprintf(buff,"vis rtd_red,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
@@ -310,13 +319,24 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		}
-	HAL_Delay(10);
 	}
 	else if (index==7){
 		len = sprintf(buff,"%s=\"%d\"",elemento,valore);
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 		len = sprintf(buff,"inverter_temp2.txt=\"%d\"",valore);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+	} else if(index==14){
+		//caso errore
+		if(flagError){
+			char mmm[15] = "R-MAP";
+			if(strcmp(errorName,mmm)){
+				len = sprintf(buff,"%s=\"%s\"",elemento,valore);
+			}
+		} else{
+			len = sprintf(buff,"%s=\"---\"",elemento);
+		}
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 	}
@@ -332,7 +352,21 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 	}
 }
 
-
+void MapValue(){
+	if (flagOK){
+		char msg[35] = " ";
+		int len;
+		if(checkMapValue()){
+			len = sprintf(msg,"page MapPopUp");
+			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(msg,"mapValue.txt=\"%d\"",*arrayData[8]);
+			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+			HAL_TIM_Base_Start_IT(&htim3); //avvia timer in mode one-pulse
+		}
+	}
+}
 
 
 

@@ -79,10 +79,11 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 extern int chiamata;
 
-#define Ndata 11 //numero dati totale da visualizzare su display
+#define Ndata 12 //numero dati totale da visualizzare su display
 #define raggioRuota 0.225	//in metri
 extern uint16_t freniData;
 extern uint16_t r2dData;
+extern uint8_t RxData[8];
 extern uint16_t mapData;
 extern CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 extern CAN_FilterTypeDef can_filter;
@@ -91,6 +92,10 @@ extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
 extern uint8_t pageRefreshata;
+
+
+extern uint8_t flagError;
+extern char errorName[20];
 
 extern uint16_t vehicleSpeed;
 extern uint16_t tempBatteries;

@@ -86,6 +86,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			//pulsante premuto<<
 			if(freniData && !r2dData){
 				r2dData = 1;
+				//HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &*arrayData[10], &TxMailbox);
 				flags[10] = 1;
 
 			} else if(freniData && r2dData){
@@ -97,28 +98,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 	if (GPIO_Pin == nextPageButton_Pin){
 		if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port, nextPageButton_Pin) == GPIO_PIN_RESET){
-			if (pageRefreshata){
-				pageRefreshata=0;
-			if(currentPageDisplay == 0){
-				currentPageDisplay = 1;
-			} else if (currentPageDisplay == 1){
-				currentPageDisplay = 0;
-			}
-			for(int i = 1;i<Ndata;i++){
-				if (active[i]==1){
-					active[1] = 0;
-				} else if (active[i]==0){
-					active[i] = 1;
-				}
-				if (active[1]==1){
-					flags[i] = 1;
-				}
-			}
-			flags[10]=1;
-			*arrayData[7] = currentPageDisplay;
-			flags[7] = 1;
-			flags[0] = 1;
-			}
+			cambiaPagina();
 		}
 
 		//comando per visualizzare pagina successiva
@@ -128,4 +108,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		//gestione pulsante 3
 	}
 }
+
+void cambiaPagina(){
+	if (pageRefreshata){
+		pageRefreshata=0;
+	if(currentPageDisplay == 0){
+		currentPageDisplay = 1;
+	} else if (currentPageDisplay == 1){
+		currentPageDisplay = 0;
+	}
+	for(int i = 1;i<Ndata;i++){
+		if (active[i]==1){
+			active[1] = 0;
+		} else if (active[i]==0){
+			active[i] = 1;
+		}
+		if (active[1]==1){
+			flags[i] = 1;
+		}
+	}
+	flags[10]=1;
+	flags[0] = 1;
+	}
+}
+
 /* USER CODE END 2 */

@@ -43,19 +43,26 @@ int determineSituation(uint8_t data) {
 
 //controlla il valore della mappa impostato sul "manettino" e se è diversa lo invia via can e mostra il popup sul display
 int checkMapValue(void){
-	//uint16_t newData = determineSituation(readShiftRegister());
-	//daTogliere if flagMAPPA (una volta implementanto il manettino)
-	//uint16_t newData = *arrayData[8]+1;
+	//uint8_t newData = determineSituation(readShiftRegister());
+	//uint16_t newData = *arrayData[8];
 	if (*arrayData[8]!=newData){
-		*arrayData[8] = newData;
-		vehicleSpeed++;
-		HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &*arrayData[8], &TxMailbox);
-		return 1;
+		if(newData==-1){
+			//errore nella lettura
+			flagError = 1;
+			flags[14] = 1;
+			sprintf(errorName,"R-MAP");
+		}
+		else{
+			flagError = 0;
+			*arrayData[8] = newData;
+			flags[8] = 1;
+			HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &*arrayData[8], &TxMailbox);
+			return 1;
+		}
 	}
-
-
 	return 0;
 }
+
 
 
 
