@@ -63,12 +63,12 @@ void Error_Handler(void);
 #define nextPageButton_Pin GPIO_PIN_5
 #define nextPageButton_GPIO_Port GPIOA
 #define nextPageButton_EXTI_IRQn EXTI9_5_IRQn
-#define button2_Pin GPIO_PIN_6
-#define button2_GPIO_Port GPIOA
-#define button2_EXTI_IRQn EXTI9_5_IRQn
-#define button3_Pin GPIO_PIN_7
-#define button3_GPIO_Port GPIOA
-#define button3_EXTI_IRQn EXTI9_5_IRQn
+#define BRe2_Pin GPIO_PIN_6
+#define BRe2_GPIO_Port GPIOA
+#define BRe2_EXTI_IRQn EXTI9_5_IRQn
+#define BRe1_Pin GPIO_PIN_7
+#define BRe1_GPIO_Port GPIOA
+#define BRe1_EXTI_IRQn EXTI9_5_IRQn
 #define SR_DATA_Pin GPIO_PIN_15
 #define SR_DATA_GPIO_Port GPIOA
 #define SR_LATCH_Pin GPIO_PIN_3
@@ -106,6 +106,7 @@ extern uint16_t tempAvgMot;
 extern uint16_t tempInverter1;
 extern uint16_t tempInverter2;
 extern uint16_t tempAvgInverter;
+extern uint16_t statoBatteria;
 extern char names[Ndata][50];
 extern uint16_t currentPageDisplay;
 extern uint8_t cmd_end[3];

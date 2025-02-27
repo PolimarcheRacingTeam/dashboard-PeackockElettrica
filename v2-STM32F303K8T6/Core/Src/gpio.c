@@ -52,16 +52,10 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SR_LATCH_Pin|SR_CLOCK_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin */
-  GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin;
+  /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin BRe2_Pin BRe1_Pin */
+  GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin|BRe2_Pin|BRe1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : button2_Pin button3_Pin */
-  GPIO_InitStruct.Pin = button2_Pin|button3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SR_DATA_Pin */
@@ -93,6 +87,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				r2dData = 0;
 				flags[10] = 1;
 			}
+			HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+
 		}
 	}
 
@@ -102,9 +98,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		}
 
 		//comando per visualizzare pagina successiva
-	} else if (GPIO_Pin == button2_Pin){
+	} else if (GPIO_Pin == BRe1_Pin){
 		//gestione pulsante 2
-	} else if (GPIO_Pin == button3_Pin){
+	} else if (GPIO_Pin == BRe2_Pin){
 		//gestione pulsante 3
 	}
 }

@@ -153,6 +153,9 @@ int main(void)
   MX_CAN_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
+  MX_TIM1_Init();
+  MX_TIM15_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -162,7 +165,14 @@ int main(void)
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
   char msg[40] = " ";
+  int len;
+
+  len = sprintf(msg, "page logoStart");
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+  HAL_TIM_Base_Start_IT(&htim2);
   flagOK = 1;
+  HAL_TIM_Base_Start_IT(&htim15);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -186,7 +196,7 @@ int main(void)
   		  //*arrayData[10] = rand()%2 ;
   		  //newData++;
   		  tempo = 0;
-  	  }*/  		  *arrayData[9] = rand()%100;					//statoBatteria
+  	  }*/  		 // *arrayData[9] = rand()%100;					//statoBatteria
 
 				//r2d
 
@@ -207,18 +217,21 @@ int main(void)
 		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna (display)
 			  //mandare al nextion
 			  if (i==8){
-				  MapValue();
+				 MapValue();
 			  }
+
 			  NEXTION_SendString(names[i], *arrayData[i], i);
 			  flags[i] = 0;
 			  lastMillis[i] = HAL_GetTick();
-			  //HAL_Delay(1);
+			  HAL_Delay(1);
 		  }
 	  }
 
-	  if (vehicleSpeed <3){
+	  /*
+	  if (vehicleSpeed >=254){
 		  newData++;
 	  }
+	  */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -236,6 +249,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -261,6 +275,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
@@ -302,7 +322,6 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 	} else if (index == 10){	//r2d
-		HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
 		if(r2dData==0){
 			len = sprintf(buff,"vis rtd_red,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
@@ -368,7 +387,10 @@ void MapValue(){
 	}
 }
 
-
+void system_reset() {
+	__disable_irq(); // Disabilita tutti gli interrupt
+	NVIC_SystemReset();	//resetta il microcontrollore, senza togliere l'alimentazione dai pin
+}
 
 /* USER CODE END 4 */
 

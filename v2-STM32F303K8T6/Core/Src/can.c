@@ -160,7 +160,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x012:	//brakeLight -> frenoPremuto	--> in decimale
 			freniData = buf[0] & 0x01;	//Estrai solo il bit più basso
 			break;
-		case 0x030:	//velocita angolari ruote
+		case 0x040:	//velocita angolari ruote
 			//lettura in Little-Endian
 			if(RxHeader->DLC == 4){
 				int16_t val1 = (int16_t)(buf[0] | (buf[1] << 8));  // Byte 0-1	velocita angolare delle due ruote
@@ -168,17 +168,21 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				//lettura in Big-Endian
 				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
 				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
-				vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
+
+				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
 				vehicleSpeed = (uint8_t)((val1+val2)/2);
+
+
 				flags[1] = 1;
-				break;
 			}
+			break;
 		case 0x021:
 			if(RxHeader->DLC == 6){
 				tempBatteries = (uint8_t)((buf[0]+buf[1]+buf[2]+buf[3]+buf[4]+buf[5])/6); //temperatura media Pacco Batteria
 				flags[2] = 1;
-				break;
 			}
+			break;
+
 		case 0x023:
 			if(RxHeader->DLC == 8){
 		        tempMot1 = (uint16_t)(buf[1] << 8 | buf[0]);  // SX (Corretto)
@@ -191,13 +195,22 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[5] = 1;
 				flags[6] = 1;
 				flags[7] = 1;
-				break;
 			}
+			break;
+
 		case 0x052:
-			if(RxHeader->DLC =4){
+			if(RxHeader->DLC ==4){
 				voltBattery = (uint16_t)((buf[0] | (buf[1]<<8)));
 				flags[3] = 1;
 			}
+			break;
+
+		case 0x054:	//stato percentuale batteria
+			if(RxHeader->DLC == 1){
+				statoBatteria = (uint16_t)(buf[0]);
+			}
+			break;
+
     }
 }
 
