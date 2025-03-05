@@ -92,6 +92,7 @@ extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
 extern uint8_t pageRefreshata;
+extern volatile uint8_t flagR1, flagR2;
 
 
 extern uint8_t flagError;

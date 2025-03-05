@@ -52,9 +52,15 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SR_LATCH_Pin|SR_CLOCK_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin BRe2_Pin BRe1_Pin */
-  GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin|BRe2_Pin|BRe1_Pin;
+  /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin */
+  GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BRe2_Pin BRe1_Pin */
+  GPIO_InitStruct.Pin = BRe2_Pin|BRe1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -75,6 +81,7 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if (flagOK==1){
 	if(GPIO_Pin == r2dButton_Pin){
 		if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
 			//pulsante premuto<<
@@ -98,11 +105,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		}
 
 		//comando per visualizzare pagina successiva
-	} else if (GPIO_Pin == BRe1_Pin){
-		//gestione pulsante 2
-	} else if (GPIO_Pin == BRe2_Pin){
-		//gestione pulsante 3
 	}
+	if (GPIO_Pin == BRe1_Pin){
+		//vehicleSpeed++;
+		if(flagR1==1){
+			flagR1 = 0;
+		} else{
+			flagR1 = 1;
+		}
+	}
+	if (GPIO_Pin == BRe2_Pin){
+		//tempAvgInverter++;
+		if(flagR2==1){
+			flagR2=0;
+		}else{
+			flagR2=1;
+		}
+	}
+}
 }
 
 void cambiaPagina(){
