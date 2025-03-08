@@ -53,6 +53,7 @@ int checkMapValue(void){
 			sprintf(errorName,"R-MAP");
 		}
 		else{
+			flagNewMap = 1;
 			flagError = 0;
 			*arrayData[8] = newData;
 			flags[8] = 1;

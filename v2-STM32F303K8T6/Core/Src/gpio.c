@@ -55,13 +55,13 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pins : r2dButton_Pin nextPageButton_Pin */
   GPIO_InitStruct.Pin = r2dButton_Pin|nextPageButton_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BRe2_Pin BRe1_Pin */
   GPIO_InitStruct.Pin = BRe2_Pin|BRe1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SR_DATA_Pin */
@@ -82,47 +82,48 @@ void MX_GPIO_Init(void)
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if (flagOK==1){
-	if(GPIO_Pin == r2dButton_Pin){
-		if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
-			//pulsante premuto<<
-			if(freniData && !r2dData){
-				r2dData = 1;
-				//HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &*arrayData[10], &TxMailbox);
-				flags[10] = 1;
-
-			} else if(freniData && r2dData){
-				r2dData = 0;
-				flags[10] = 1;
-			}
-			HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
-
-		}
+		switch (GPIO_Pin){
+			case r2dButton_Pin:
+				if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
+					if(freniData && !r2dData){
+						r2dData = 1;
+						flags[10] = 1;
+					} else if(freniData && r2dData){
+						r2dData = 0;
+						flags[10] = 1;
+					}
+					HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+				}
+				break;
+			case nextPageButton_Pin:
+				if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port,nextPageButton_Pin) == GPIO_PIN_RESET){
+					cambiaPagina();
+				}
+				break;
+			case BRe1_Pin:
+				//vehicleSpeed++;
+					if(flagR1==0){
+						flagR1=1;
+						lastMillis[12] = HAL_GetTick();
+					} else{
+					flagR1=0;
+				}
+				break;
+			case BRe2_Pin:
+				//tempAvgInverter++;
+				//if (HAL_GPIO_ReadPin(Button4_GPIO_Port,Button4_Pin)== GPIO_PIN_RESET){
+					if(flagR2==0){
+						flagR2=1;
+						lastMillis[13] = HAL_GetTick();
+					} else{
+						flagR2=0;
+					}
+				break;
+				}
+		  if(flagR1==1 && flagR2==1){
+			  system_reset();
+		  }
 	}
-
-	if (GPIO_Pin == nextPageButton_Pin){
-		if (HAL_GPIO_ReadPin(nextPageButton_GPIO_Port, nextPageButton_Pin) == GPIO_PIN_RESET){
-			cambiaPagina();
-		}
-
-		//comando per visualizzare pagina successiva
-	}
-	if (GPIO_Pin == BRe1_Pin){
-		//vehicleSpeed++;
-		if(flagR1==1){
-			flagR1 = 0;
-		} else{
-			flagR1 = 1;
-		}
-	}
-	if (GPIO_Pin == BRe2_Pin){
-		//tempAvgInverter++;
-		if(flagR2==1){
-			flagR2=0;
-		}else{
-			flagR2=1;
-		}
-	}
-}
 }
 
 void cambiaPagina(){

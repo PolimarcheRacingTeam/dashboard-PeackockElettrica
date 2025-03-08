@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
-#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -53,10 +52,10 @@
 /* USER CODE BEGIN PV */
 
 //daeliminare
-int ind = 0;
 volatile uint8_t flagOK = 0;
 volatile uint8_t flagR1 = 0, flagR2 = 0;	//flag per bottoni reset
-uint16_t freniData = 1;
+volatile uint8_t flagNewMap = 0;
+uint16_t freniData = 0;
 uint16_t r2dData = 0;
 uint16_t mapData = 0;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
@@ -150,16 +149,15 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
   MX_USART2_UART_Init();
-  HAL_Delay(150);
+  HAL_Delay(500);
   len = sprintf(msg, "page logoStart");
   HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-  HAL_Delay(2500);	//delay
+  HAL_Delay(2000);	//delay
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_CAN_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
@@ -217,34 +215,46 @@ int main(void)
 
 	  for(uint8_t i=1;i<Ndata;i++ ){
 		  //daTogliere
-		  if (flags[i] == 1 || (active[i] == 1 && currMillis-lastMillis[i] > 2000)){	//al massimo ogni due secondi ogni valore si aggiorna (display)
+		  if ((flags[i] == 1 && !flagNewMap) || ((active[i] == 1 || active[i]==2) && (currMillis-lastMillis[i] > 2000))){	//al massimo ogni due secondi ogni valore si aggiorna (display)
 			  //mandare al nextion
 			  if (i==8){
 				 MapValue();
 			  }
-
+			  flags[i] = 0;
+			  if(i==12){
+					  flagR1=0;
+					  flagR2=0;
+					  lastMillis[12] = HAL_GetTick();
+					  lastMillis[13] = HAL_GetTick();
+					  continue;
+				  }
 			  //if(i==1||i==9||i==6||i==7){
 			  NEXTION_SendString(names[i], *arrayData[i], i);
-			  flags[i] = 0;
 			  lastMillis[i] = HAL_GetTick();
-			  HAL_Delay(20);
+			  HAL_Delay(4);
 		  //}
 		  }
 	  }
 
+	  /*
 	  if(flagR1==1 && flagR2==1){
 		  system_reset();
 	  }
 
-	  /*
-	  if (vehicleSpeed %70==0){
-		  newData++;
-	  }*/
+	  if (vehicleSpeed ==100){
+		  if(!flagNewMap)
+		  {
+			  newData++;
+		  vehicleSpeed++;
+			  }
+	  }
+	  */
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  tempo++;
+	  //tempo++;
+	  //tempo=0;
 	  //HAL_Delay(10);  //tempo++;
   }
   /* USER CODE END 3 */
@@ -310,10 +320,11 @@ static void MX_NVIC_Init(void)
 void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può essere txt o val
 	char buff[50];
 	int len;
-	if (index == 9){	//battery bar value
+	switch (index){	//battery bar value
+	case 9:
 		len = sprintf(buff,"%s=%d",elemento,valore);
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 		if(valore < 15){
 			len = sprintf(buff,"battery_bar.pco=59392");
 		} else if (valore> 50){
@@ -321,34 +332,38 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		} else{
 			len = sprintf(buff,"battery_bar.pco=65504");
 		}
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
-	} else if (index == 10){	//r2d
-		if(r2dData==0){
-			len = sprintf(buff,"vis rtd_red,1");
-			HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-			HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
-			len = sprintf(buff,"vis rtd_green,0");
-			HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-			HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		break;
+	case 10:	//r2d
+		switch (r2dData){
+			case 0:
+				len = sprintf(buff,"vis rtd_red,1");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+				len = sprintf(buff,"vis rtd_green,0");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+				break;
+			case 1:
+				len = sprintf(buff,"vis rtd_red,0");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+				len = sprintf(buff,"vis rtd_green,1");
+				HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+				break;
 		}
-		else if (r2dData==1){
-			len = sprintf(buff,"vis rtd_red,0");
-			HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-			HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
-			len = sprintf(buff,"vis rtd_green,1");
-			HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-			HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
-		}
-	}
-	else if (index==7){
+		break;
+	case 7:
 		len = sprintf(buff,"%s=\"%d\"",elemento,valore);
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 		len = sprintf(buff,"inverter_temp2.txt=\"%d\"",valore);
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3);
-	} else if(index==14){
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		break;
+	case 14:
 		//caso errore
 		if(flagError){
 			char mmm[15] = "R-MAP";
@@ -358,18 +373,20 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 		} else{
 			len = sprintf(buff,"%s=\"---\"",elemento);
 		}
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3);
-	}
-	else{
-		if(index==3){	//voltage battery -> float ma intero
-			len = sprintf(buff,"%s=\"%dV\"",elemento,(int)(valore));
-		}
-		else{//caso generale
-			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
-		}
-		HAL_UART_Transmit_DMA(&huart2,(uint8_t*)buff,len);
-		HAL_UART_Transmit_DMA(&huart2,cmd_end,3); //invio comandi = esegue
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+		break;
+	case 3:
+		len = sprintf(buff,"%s=\"%dV\"",elemento,(int)(valore));
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		break;
+	default:
+		//caso generale
+		len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+		HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+		break;
 	}
 }
 

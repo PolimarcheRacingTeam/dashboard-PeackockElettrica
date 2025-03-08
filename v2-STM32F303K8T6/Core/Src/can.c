@@ -156,7 +156,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 }
 
 void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
-	vehicleSpeed++;
     switch(RxHeader->StdId){
 		case 0x012:	//brakeLight -> frenoPremuto	--> in decimale
 			freniData = buf[0] & 0x01;	//Estrai solo il bit più basso
@@ -172,8 +171,6 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 
 				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
 				vehicleSpeed = (uint8_t)((val1+val2)/2);
-
-
 				flags[1] = 1;
 			}
 			break;
@@ -183,7 +180,6 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[2] = 1;
 			}
 			break;
-
 		case 0x023:
 			if(RxHeader->DLC == 8){
 		        tempMot1 = (uint16_t)(buf[1] << 8 | buf[0]);  // SX (Corretto)
@@ -198,23 +194,18 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[7] = 1;
 			}
 			break;
-
 		case 0x052:
 			if(RxHeader->DLC ==4){
 				voltBattery = (uint16_t)((buf[0] | (buf[1]<<8)));
 				flags[3] = 1;
 			}
 			break;
-
 		case 0x054:	//stato percentuale batteria
 			if(RxHeader->DLC == 1){
 				statoBatteria = (uint16_t)(buf[0]);
 				flags[9]=1;
 			}
 			break;
-
     }
 }
-
-
 /* USER CODE END 1 */

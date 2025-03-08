@@ -115,14 +115,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		char msg[30] = " ";
 		int len = 0;
 		if(htim->Instance == TIM3){
-
 			len = sprintf(msg,"page %s",pageDisplayArray[currentPageDisplay]);
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			HAL_TIM_Base_Stop_IT(&htim3);
 			flags[8]=1;
-			flags[0]=1;
-			cambiaPagina();
+			//flags[0]=1;
+			flagNewMap=0;
+			//cambiaPagina();
 		}
 	}
 }

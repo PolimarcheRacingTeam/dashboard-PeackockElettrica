@@ -77,9 +77,8 @@ void Error_Handler(void);
 #define SR_CLOCK_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-extern int chiamata;
 
-#define Ndata 12 //numero dati totale da visualizzare su display
+#define Ndata 14 //numero dati totale da visualizzare su display
 #define raggioRuota 0.225	//in metri
 extern uint16_t freniData;
 extern uint16_t r2dData;
@@ -119,6 +118,10 @@ extern uint16_t* arrayData[Ndata];
 
 extern volatile uint8_t flagOK;
 extern uint8_t newData;
+extern volatile uint8_t flagNewMap;
+
+extern uint32_t lastMillis[Ndata];
+
 
 /* USER CODE END Private defines */
 
