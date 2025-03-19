@@ -1,0 +1,3 @@
+../Core/Src/shift_register.c:8:9:readShiftRegister	3
+../Core/Src/shift_register.c:29:5:determineSituation	13
+../Core/Src/shift_register.c:45:5:checkMapValue	2
