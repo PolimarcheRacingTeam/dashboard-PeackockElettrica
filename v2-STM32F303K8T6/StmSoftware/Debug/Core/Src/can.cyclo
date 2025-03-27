@@ -3,4 +3,4 @@
 ../Core/Src/can.c:93:6:HAL_CAN_MspInit	2
 ../Core/Src/can.c:123:6:HAL_CAN_MspDeInit	2
 ../Core/Src/can.c:149:6:HAL_CAN_RxFifo0MsgPendingCallback	2
-../Core/Src/can.c:158:6:process_can_message	15
+../Core/Src/can.c:158:6:process_can_message	24

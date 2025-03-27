@@ -18,10 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "can.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,7 +47,10 @@
 
 /* USER CODE BEGIN PV */
 
-//daeliminare
+volatile uint8_t flagErroreInCorso = 0;
+uint16_t ultimoErroreRicevuto = 0;
+
+
 volatile uint8_t flagOK = 0;
 volatile uint8_t flagNewMap=0;
 uint16_t freniData = 1;
@@ -146,6 +146,7 @@ int main(void)
   MX_CAN_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -318,6 +319,28 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			} else{
 				len = sprintf(buff,"%s=\"---\"",elemento);
 			}
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 11:		//accendiErrore
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis ErrorBar1,1");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis ErrorBar2,1",elemento,valore);
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 12:		//spegniErrore
+			len = sprintf(buff,"%s=---",elemento);
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis ErrorBar1,0");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis ErrorBar2,0");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			break;

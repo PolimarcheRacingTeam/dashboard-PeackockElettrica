@@ -165,20 +165,6 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				tempAvgFan = (uint16_t)((buf[0]+buf[1])/2);
 				flags[4]=1;
 			}
-		case 0x040:	//velocita angolari ruote
-			//lettura in Little-Endian
-			if(RxHeader->DLC == 4){
-				int16_t val1 = (int16_t)(buf[0] | (buf[1] << 8));  // Byte 0-1	velocita angolare delle due ruote
-				int16_t val2 = (int16_t)(buf[2] | (buf[3] << 8));  // Byte 2-3
-				//lettura in Big-Endian
-				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
-				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
-
-				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
-				vehicleSpeed = (uint8_t)((val1+val2)/2);
-				flags[0] = 1;
-			}
-			break;
 		case 0x021:
 			if(RxHeader->DLC == 6){
 				tempBatteries = (uint8_t)((buf[0]+buf[1]+buf[2]+buf[3]+buf[4]+buf[5])/6); //temperatura media Pacco Batteria
@@ -197,13 +183,19 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[3] = 1;
 			}
 			break;
-			/*
-		case 0x052:
-			if(RxHeader->DLC ==4){
-				voltBattery = (uint16_t)((buf[0] | (buf[1]<<8)));
-				flags[3] = 1;
+		case 0x040:	//velocita angolari ruote
+			//lettura in Little-Endian
+			if(RxHeader->DLC == 4){
+				int16_t val1 = (int16_t)(buf[0] | (buf[1] << 8));  // Byte 0-1	velocita angolare delle due ruote
+				int16_t val2 = (int16_t)(buf[2] | (buf[3] << 8));  // Byte 2-3
+				//lettura in Big-Endian
+				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
+				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
+
+				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
+				vehicleSpeed = (uint8_t)((val1+val2)/2);
+				flags[0] = 1;
 			}
-			*/
 			break;
 		case 0x054:	//stato percentuale batteria
 			if(RxHeader->DLC == 1){
@@ -211,6 +203,57 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[6]=1;
 			}
 			break;
+
+		//ERRORI
+		case 0x001:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 1;
+				NEXTION_SendString("ErrorVal.txt",1, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+		case 0x002:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 1;
+				NEXTION_SendString("ErrorVal.txt",2, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+		case 0x003:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 1;
+				NEXTION_SendString("ErrorVal.txt",3, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+		case 0x004:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 1;
+				NEXTION_SendString("ErrorVal.txt",4, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+		case 0x005:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 1;
+				NEXTION_SendString("ErrorVal.txt",5, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+		case 0x006:
+			if (!flagErroreInCorso){
+				flagErroreInCorso = 6;
+				NEXTION_SendString("ErrorVal.txt",5, 11);
+				ultimoErroreRicevuto = HAL_GetTick();
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			break;
+
     }
 }
 /* USER CODE END 1 */

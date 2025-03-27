@@ -31,7 +31,10 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -74,6 +77,10 @@ void Error_Handler(void);
 
 #define Ndata 9 //numero dati totale da visualizzare su display
 #define NFlagsInterrupt 1
+
+
+extern volatile uint8_t flagErroreInCorso;
+extern uint16_t ultimoErroreRicevuto;
 
 #define raggioRuota 0.225	//in metri
 extern uint16_t freniData;
