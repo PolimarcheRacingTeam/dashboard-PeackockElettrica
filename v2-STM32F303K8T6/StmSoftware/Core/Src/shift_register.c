@@ -49,9 +49,11 @@ int checkMapValue(void){
 		*arrayData[5] = newData;
 		if(newData==-1){
 			//errore nella lettura
-			flagError = 1;
-			flags[8] = 1;
-			sprintf(errorName,"R-MAP");
+			flagErroreInCorso=1;
+			errorValue = 10;
+			NEXTION_SendString("ErrorValue.txt",0, 11);
+			ultimoErroreRicevuto = HAL_GetTick();
+			HAL_TIM_Base_Start_IT(&htim2);
 		}
 		else{
 			flagError = 0;

@@ -160,10 +160,11 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x012:	//brakeLight -> frenoPremuto	--> in decimale
 			freniData = buf[0] & 0x01;	//Estrai solo il bit più basso
 			break;
-		case 0x013:
-			if(RxHeader->DLC == 2){
-				tempAvgFan = (uint16_t)((buf[0]+buf[1])/2);
-				flags[4]=1;
+		case 0x024:
+			if(RxHeader->DLC == 4){
+		        int tempFan1 = (uint16_t)(buf[1] << 8 | buf[0]);
+		        int tempFan2 = (uint16_t)(buf[3] << 8 | buf[2]);
+		        tempAvgFan = (uint16_t)((tempFan1 + tempFan2) / 2);
 			}
 		case 0x021:
 			if(RxHeader->DLC == 6){
@@ -208,7 +209,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x001:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
-				NEXTION_SendString("ErrorVal.txt",1, 11);
+				errorValue = 1;
+				NEXTION_SendString("ErrorValue.txt",1, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -216,7 +218,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x002:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
-				NEXTION_SendString("ErrorVal.txt",2, 11);
+				errorValue = 2;
+				NEXTION_SendString("ErrorValue.txt",2, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -224,7 +227,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x003:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
-				NEXTION_SendString("ErrorVal.txt",3, 11);
+				errorValue = 3;
+				NEXTION_SendString("ErrorValue.txt",3, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -232,7 +236,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x004:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
-				NEXTION_SendString("ErrorVal.txt",4, 11);
+				errorValue = 4;
+				NEXTION_SendString("ErrorValue.txt",4, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -240,15 +245,17 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		case 0x005:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
-				NEXTION_SendString("ErrorVal.txt",5, 11);
+				errorValue = 5;
+				NEXTION_SendString("ErrorValue.txt",5, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
 			break;
 		case 0x006:
 			if (!flagErroreInCorso){
-				flagErroreInCorso = 6;
-				NEXTION_SendString("ErrorVal.txt",5, 11);
+				flagErroreInCorso = 1;
+				errorValue = 6;
+				NEXTION_SendString("ErrorValue.txt",6, 11);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}

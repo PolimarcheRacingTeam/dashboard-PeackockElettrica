@@ -95,6 +95,7 @@ extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
 extern uint8_t pageRefreshata;
 
+extern uint8_t errorValue;
 extern uint8_t flagError;
 extern char errorName[20];
 

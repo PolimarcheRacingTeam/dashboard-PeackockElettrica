@@ -96,6 +96,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			case resetButton_Pin:
 				if (HAL_GPIO_ReadPin(resetButton_GPIO_Port, resetButton_Pin) == GPIO_PIN_RESET){
 					system_reset();
+					//newData++;
 				}
 				break;
 			}

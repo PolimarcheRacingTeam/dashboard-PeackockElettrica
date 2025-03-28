@@ -18,7 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "can.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,7 +56,7 @@ uint16_t ultimoErroreRicevuto = 0;
 
 volatile uint8_t flagOK = 0;
 volatile uint8_t flagNewMap=0;
-uint16_t freniData = 1;
+uint16_t freniData = 0;
 uint16_t r2dData = 0;
 uint16_t mapData = 0;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
@@ -71,12 +74,12 @@ uint16_t tempAvgFan;
 uint8_t newData = 0;
 uint8_t flagError = 0;
 char errorName[20] = " ";
-
+uint8_t errorValue = 0;
 uint32_t millisFlagsInterrupt[NFlagsInterrupt];	//indica quando è stato chiamato quell'interrupt
 volatile uint8_t flagsUsable[NFlagsInterrupt] = {1};
 
 //nomi delle variabili degli elementi sul nextion (manca il r2d,caso particolare)
-char names[Ndata][50]= {"SpeedValue.txt","TempBat.txt","TempEng.txt","TempInv.txt","TempFan.txt","MapValue.txt","BatteryValBar.val","R2DValue.pco","ErrorVal.txt"};
+char names[Ndata][50]= {"SpeedValue.txt","TempBat.txt","TempEng.txt","TempInv.txt","TempFan.txt","MapValue.txt","BatteryValBar.val","R2DValue.pco","ErrorValue.txt"};
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 
 uint8_t flags[Ndata];
@@ -151,7 +154,7 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-  //CAN_setup();	//avvia il CAN + filtro
+  CAN_setup();	//avvia il CAN + filtro
   HAL_Delay(100);
   uint32_t currMillis = HAL_GetTick();
   flagOK = 1;
@@ -187,18 +190,20 @@ int main(void)
   		  tempo = 0;
   	  }*/
 
-	  for(uint8_t i=0;i<Ndata-1;i++ ){
-		  if (flags[i] == 1 || currMillis-lastMillis[i] > 2000){	//al massimo ogni due secondi ogni valore si aggiorna (display)
-			  //mandare al nextion
-			  if (i==5){
-				 MapValue();
-			  }
-			  flags[i] = 0;
-			  NEXTION_SendString(names[i], *arrayData[i], i);
-			  lastMillis[i] = HAL_GetTick();
-			  HAL_Delay(1);
-		  }
-	  }
+  	  if(!flagNewMap){
+  		  for(uint8_t i=0;i<Ndata;i++ ){
+  			  if (flags[i] == 1 || currMillis-lastMillis[i] > 2000){	//al massimo ogni due secondi ogni valore si aggiorna (display)
+  				  //mandare al nextion
+  				  if (i==5){
+  					 MapValue();
+  				  }
+  				  flags[i] = 0;
+  				  NEXTION_SendString(names[i], *arrayData[i], i);
+  				  lastMillis[i] = HAL_GetTick();
+  				  HAL_Delay(1);
+  			  }
+  		  }
+  	  }
 
 	  for (uint8_t i=0;i<NFlagsInterrupt;i++){						//aiuta ad evitare doppio click
 		  if(!flagsUsable[i]){
@@ -207,6 +212,13 @@ int main(void)
 			  }
 		  }
 	  }
+
+	  /*
+	  if (vehicleSpeed == 252){
+		  newData++;
+		  vehicleSpeed++;
+	  }*/
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -280,17 +292,17 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 			if(valore < 20){
-				len = sprintf(buff,"battery_bar.pco=47104");	//rosso 		-> 0-19 %
+				len = sprintf(buff,"BatteryValBar.pco=47104");	//rosso 		-> 0-19 %
 			} else if (valore >=20 && valore <=35){
-				len = sprintf(buff,"battery_bar.pco=64512");		//arancio		-> 20-35 %
+				len = sprintf(buff,"BatteryValBar.pco=64512");		//arancio		-> 20-35 %
 			} else if (valore> 35 && valore <= 55){
-				len = sprintf(buff,"battery_bar.pco=65504");		//giallo 		-> 36-55 %
+				len = sprintf(buff,"BatteryValBar.pco=65504");		//giallo 		-> 36-55 %
 			}else{
-				len = sprintf(buff,"battery_bar.pco=1856");	//verde					-> 56-100 %
+				len = sprintf(buff,"BatteryValBar.pco=1856");	//verde					-> 56-100 %
 			}
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-			len = sprintf(buff,"BatteryValTex=\"%d\"",valore);
+			len = sprintf(buff,"BatteryValTex.txt=\"%d\"",valore);
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			break;
@@ -308,39 +320,38 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			break;
 		case 8:						//flagErrore = 1
 			//caso errore
-			if(flagError){
-				char mmm[15] = "R-MAP";
-				if(strcmp(errorName,mmm)){
-					len = sprintf(buff,"%s=\"%s\"",elemento,valore);
-				}
-				else{
-					len = sprintf(buff,"%s=\"%d\"",elemento,errorName);
-				}
-			} else{
-				len = sprintf(buff,"%s=\"---\"",elemento);
+			if(!flagErroreInCorso){
+				NEXTION_SendString("ErrorValue.txt",0, 12);
 			}
-			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			break;
 		case 11:		//accendiErrore
-			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			len = sprintf(buff,"vis ErrorValue,1",elemento);
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis t0,1");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"ErrorValue.txt=\"%d\"",errorValue);
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			len = sprintf(buff,"vis ErrorBar1,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-			len = sprintf(buff,"vis ErrorBar2,1",elemento,valore);
+			len = sprintf(buff,"vis ErrorBar2,1");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			break;
 		case 12:		//spegniErrore
-			len = sprintf(buff,"%s=---",elemento);
+			len = sprintf(buff,"vis ErrorValue,0",elemento);
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			len = sprintf(buff,"vis ErrorBar1,0");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			len = sprintf(buff,"vis ErrorBar2,0");
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
+			len = sprintf(buff,"vis t0,0");
 			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			break;
@@ -361,7 +372,7 @@ void MapValue(){
 			len = sprintf(msg,"page MapPopUp");
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
-			len = sprintf(msg,"mapValue.txt=\"%d\"",*arrayData[8]);
+			len = sprintf(msg,"mapValue.txt=\"%d\"",*arrayData[5]);
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY);
 			HAL_TIM_Base_Start_IT(&htim3); //avvia timer in mode one-pulse
