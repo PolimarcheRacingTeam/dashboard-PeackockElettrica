@@ -85,6 +85,8 @@ uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 uint8_t flags[Ndata];
 uint32_t lastMillis[Ndata];
 uint16_t* arrayData[Ndata] = {&vehicleSpeed,&tempBatteries,&tempAvgMot,&tempAvgInverter,&tempAvgFan,&mapData,&statoBatteria,&r2dData,&flagError};
+
+uint8_t tempo = 0;
 //arrayData = array di PUNTATORI delle variabili contenenti i dati
 /*
 arrayData[0] = vehicleSpeed
@@ -156,6 +158,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   CAN_setup();	//avvia il CAN + filtro
   HAL_Delay(100);
+
+  len = sprintf(msg, "page logoStart");
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
   uint32_t currMillis = HAL_GetTick();
   flagOK = 1;
   len = sprintf(msg, "page main");
@@ -174,21 +180,28 @@ int main(void)
   while (1)
   {	   currMillis = HAL_GetTick();
 
-  	  /*
-  	  if(tempo == 100){
+
+  	  if(tempo == 10){/*
   		  //CODICE PER GENERARE DATI FITTIZI
   		  *arrayData[0] = rand()%200;			//speed
   		  *arrayData[1] = rand()%100;				//temp batt
   		  *arrayData[2] = rand()%100;			//temp engine
   		  *arrayData[3] = rand()%100;			//temp inver
-  		  *arrayData[4]   		  				//temp fan
-  		  *arrayData[5] = rand()%3 +1;		//mappa
+  		  *arrayData[4] = rand()%50;	  				//temp fan
+  		  //*arrayData[5] = rand()%3 +1;		//mappa
   		  *arrayData[6] = rand()%101 ;		//statoBatteria (SoC %)
   		  *arrayData[7] = rand()%2;			//r2d
   		  *arrayData[8] = rand()%2;			//flagErrore (0-1)
   		  //newData++;
+  		   *
+  		   * for(uint8_t i = 0; i<Ndata;i++){
+  			  flags[i]=1;
+  		  }
+  		  */
   		  tempo = 0;
-  	  }*/
+
+
+  	  }
 
   	  if(!flagNewMap){
   		  for(uint8_t i=0;i<Ndata;i++ ){
@@ -222,6 +235,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  tempo++;
   }
   /* USER CODE END 3 */
 }

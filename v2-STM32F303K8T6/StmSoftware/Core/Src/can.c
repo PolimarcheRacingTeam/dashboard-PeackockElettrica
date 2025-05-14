@@ -198,7 +198,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[0] = 1;
 			}
 			break;
-		case 0x054:	//stato percentuale batteria
+		case 0x026:	//stato percentuale batteria
 			if(RxHeader->DLC == 1){
 				statoBatteria = (uint16_t)(buf[0]);
 				flags[6]=1;
@@ -206,6 +206,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			break;
 
 		//ERRORI
+			/*
 		case 0x001:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
@@ -260,7 +261,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
 			break;
-
+			*/
     }
 }
 /* USER CODE END 1 */
