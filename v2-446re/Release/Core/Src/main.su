@@ -1,0 +1,6 @@
+../Core/Src/main.c:245:6:SystemClock_Config	96	static,ignoring_inline_asm
+../Core/Src/main.c:290:6:NEXTION_SendString	72	static
+../Core/Src/main.c:118:5:main	80	static
+../Core/Src/main.c:371:6:MapValue	48	static
+../Core/Src/main.c:387:6:system_reset	0	static,ignoring_inline_asm
+../Core/Src/main.c:398:6:Error_Handler	0	static,ignoring_inline_asm
