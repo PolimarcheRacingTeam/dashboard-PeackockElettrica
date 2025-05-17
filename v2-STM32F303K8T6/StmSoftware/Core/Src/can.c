@@ -172,27 +172,42 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				flags[1] = 1;
 			}
 			break;
+
 		case 0x023:
 			if(RxHeader->DLC == 8){
+				/*
 		        int tempMot1 = (uint16_t)(buf[1] << 8 | buf[0]);  // SX (Corretto)
 		        int tempMot2 = (uint16_t)(buf[3] << 8 | buf[2]);  // DX (Corretto)
 		        tempAvgMot = (uint16_t)((tempMot1 + tempMot2) / 2);
 		        int tempInverter1 = (uint16_t)(buf[5] << 8 | buf[4]); // Corretto
 		        int tempInverter2 = (uint16_t)(buf[7] << 8 | buf[6]); // Corretto
 		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
+		        */
+		        int tempMot1 = (uint16_t)(buf[0] << 8 | buf[1]);
+		        int tempMot2 = (uint16_t)(buf[2] << 8 | buf[3]);
+		        tempAvgMot = (uint16_t)((tempMot1 + tempMot2) / 2);
+		        int tempInverter1 = (uint16_t)(buf[4] << 8 | buf[5]);
+		        int tempInverter2 = (uint16_t)(buf[6] << 8 | buf[7]);
+		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
 				flags[2] = 1;
 				flags[3] = 1;
 			}
 			break;
-		case 0x040:	//velocita angolari ruote
+		case 0x031:		//RPM x TEST
+				if(RxHeader->DLC == 2){
+					vehicleSpeed = (uint16_t)(buf[0] | (buf[1] << 8));
+					flags[0] = 1;
+				}
+		case 0x030:	//velocita angolari ruote
 			//lettura in Little-Endian
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+			break;
 			if(RxHeader->DLC == 4){
 				int16_t val1 = (int16_t)(buf[0] | (buf[1] << 8));  // Byte 0-1	velocita angolare delle due ruote
 				int16_t val2 = (int16_t)(buf[2] | (buf[3] << 8));  // Byte 2-3
 				//lettura in Big-Endian
 				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
 				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
-
 				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
 				vehicleSpeed = (uint8_t)((val1+val2)/2);
 				flags[0] = 1;

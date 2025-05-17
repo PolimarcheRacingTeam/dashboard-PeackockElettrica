@@ -240,8 +240,8 @@ Disassembly of section .text:
  800038e:	e8df f003 	tbb	[pc, r3]
  8000392:	5915      	.short	0x5915
  8000394:	51590c2b 	.word	0x51590c2b
- 8000398:	2b40      	cmp	r3, #64	@ 0x40
- 800039a:	d039      	beq.n	8000410 <process_can_message+0x98>
+ 8000398:	2b31      	cmp	r3, #49	@ 0x31
+ 800039a:	d041      	beq.n	8000420 <process_can_message+0xa8>
  800039c:	4770      	bx	lr
  800039e:	780b      	ldrb	r3, [r1, #0]
  80003a0:	4a29      	ldr	r2, [pc, #164]	@ (8000448 <process_can_message+0xd0>)
@@ -281,33 +281,35 @@ Disassembly of section .text:
  80003e8:	6903      	ldr	r3, [r0, #16]
  80003ea:	2b08      	cmp	r3, #8
  80003ec:	d12a      	bne.n	8000444 <process_can_message+0xcc>
- 80003ee:	880b      	ldrh	r3, [r1, #0]
- 80003f0:	884a      	ldrh	r2, [r1, #2]
- 80003f2:	4413      	add	r3, r2
- 80003f4:	4a18      	ldr	r2, [pc, #96]	@ (8000458 <process_can_message+0xe0>)
- 80003f6:	105b      	asrs	r3, r3, #1
- 80003f8:	8013      	strh	r3, [r2, #0]
- 80003fa:	88ca      	ldrh	r2, [r1, #6]
- 80003fc:	888b      	ldrh	r3, [r1, #4]
- 80003fe:	4413      	add	r3, r2
- 8000400:	4a16      	ldr	r2, [pc, #88]	@ (800045c <process_can_message+0xe4>)
- 8000402:	105b      	asrs	r3, r3, #1
- 8000404:	8013      	strh	r3, [r2, #0]
- 8000406:	4b13      	ldr	r3, [pc, #76]	@ (8000454 <process_can_message+0xdc>)
- 8000408:	2201      	movs	r2, #1
- 800040a:	709a      	strb	r2, [r3, #2]
- 800040c:	70da      	strb	r2, [r3, #3]
- 800040e:	4770      	bx	lr
- 8000410:	6903      	ldr	r3, [r0, #16]
- 8000412:	2b04      	cmp	r3, #4
- 8000414:	d116      	bne.n	8000444 <process_can_message+0xcc>
- 8000416:	f9b1 3000 	ldrsh.w	r3, [r1]
- 800041a:	f9b1 2002 	ldrsh.w	r2, [r1, #2]
- 800041e:	4413      	add	r3, r2
- 8000420:	eb03 73d3 	add.w	r3, r3, r3, lsr #31
- 8000424:	4a0e      	ldr	r2, [pc, #56]	@ (8000460 <process_can_message+0xe8>)
- 8000426:	f3c3 0347 	ubfx	r3, r3, #1, #8
- 800042a:	8013      	strh	r3, [r2, #0]
+ 80003ee:	884a      	ldrh	r2, [r1, #2]
+ 80003f0:	880b      	ldrh	r3, [r1, #0]
+ 80003f2:	ba52      	rev16	r2, r2
+ 80003f4:	b292      	uxth	r2, r2
+ 80003f6:	ba5b      	rev16	r3, r3
+ 80003f8:	fa12 f383 	uxtah	r3, r2, r3
+ 80003fc:	4a16      	ldr	r2, [pc, #88]	@ (8000458 <process_can_message+0xe0>)
+ 80003fe:	105b      	asrs	r3, r3, #1
+ 8000400:	8013      	strh	r3, [r2, #0]
+ 8000402:	88ca      	ldrh	r2, [r1, #6]
+ 8000404:	888b      	ldrh	r3, [r1, #4]
+ 8000406:	ba52      	rev16	r2, r2
+ 8000408:	b292      	uxth	r2, r2
+ 800040a:	ba5b      	rev16	r3, r3
+ 800040c:	fa12 f383 	uxtah	r3, r2, r3
+ 8000410:	4a12      	ldr	r2, [pc, #72]	@ (800045c <process_can_message+0xe4>)
+ 8000412:	105b      	asrs	r3, r3, #1
+ 8000414:	8013      	strh	r3, [r2, #0]
+ 8000416:	4b0f      	ldr	r3, [pc, #60]	@ (8000454 <process_can_message+0xdc>)
+ 8000418:	2201      	movs	r2, #1
+ 800041a:	709a      	strb	r2, [r3, #2]
+ 800041c:	70da      	strb	r2, [r3, #3]
+ 800041e:	4770      	bx	lr
+ 8000420:	6903      	ldr	r3, [r0, #16]
+ 8000422:	2b02      	cmp	r3, #2
+ 8000424:	d10e      	bne.n	8000444 <process_can_message+0xcc>
+ 8000426:	4b0e      	ldr	r3, [pc, #56]	@ (8000460 <process_can_message+0xe8>)
+ 8000428:	880a      	ldrh	r2, [r1, #0]
+ 800042a:	801a      	strh	r2, [r3, #0]
  800042c:	4b09      	ldr	r3, [pc, #36]	@ (8000454 <process_can_message+0xdc>)
  800042e:	2201      	movs	r2, #1
  8000430:	701a      	strb	r2, [r3, #0]

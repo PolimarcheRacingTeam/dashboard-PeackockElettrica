@@ -57,7 +57,7 @@ volatile uint8_t flagOK = 0;
 volatile uint8_t flagNewMap=0;
 uint16_t freniData = 0;
 uint16_t r2dData = 0;
-uint16_t mapData = 0;
+uint16_t mapData = 1;
 CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 CAN_FilterTypeDef can_filter;
 CAN_RxHeaderTypeDef RxHeader;
@@ -65,11 +65,11 @@ uint8_t RxData[8];
 uint32_t TxMailbox;\
 
 uint16_t vehicleSpeed = 0;
-uint16_t tempBatteries;
-uint16_t tempAvgMot;
-uint16_t tempAvgInverter;
-uint16_t statoBatteria;
-uint16_t tempAvgFan;
+uint16_t tempBatteries=25;
+uint16_t tempAvgMot=25;
+uint16_t tempAvgInverter=25;
+uint16_t statoBatteria = 100;
+uint16_t tempAvgFan=25;
 uint8_t newData = 0;
 uint8_t flagError = 0;
 char errorName[20] = " ";
@@ -145,8 +145,8 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  CAN_setup();	//avvia il CAN + filtro
   HAL_Delay(100);
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
   HAL_Delay(500);
@@ -169,6 +169,7 @@ int main(void)
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 
+  CAN_setup();	//avvia il CAN + filtro
 
   /* USER CODE END 2 */
 
@@ -361,6 +362,8 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
 			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
+
 			break;
 		}
 }

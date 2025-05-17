@@ -93,6 +93,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if (flagOK==1){
 		if (GPIO_Pin == B1_Pin){
 			HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+			HAL_CAN_AddTxMessage(&hcan1, &r2dTxHeader, &r2dData, &TxMailbox);
+
 		}
 		/*
 		switch (GPIO_Pin){

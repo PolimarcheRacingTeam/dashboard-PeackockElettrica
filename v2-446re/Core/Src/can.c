@@ -34,18 +34,18 @@ void CAN_setup(void){
 	  can_filter.FilterMaskIdLow = 0;
 	  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
 	  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
-	  /*
+	  HAL_CAN_Start(&hcan1);
+
 	  if(HAL_CAN_ConfigFilter(&hcan1, &can_filter)!= HAL_OK){
 		  Error_Handler();
 	  }
-	  HAL_CAN_Start(&hcan1);
 	  if(HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING)!= HAL_OK){
 		  Error_Handler();
 	  }
-	  */
 
-	  HAL_CAN_ConfigFilter(&hcan1, &can_filter);
-	  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+	  //HAL_CAN_ConfigFilter(&hcan1, &can_filter);
+	  //HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
 	  r2dTxHeader.DLC = 1;	//numero byte che deve mandare (in questo caso basterebbe un bit)
 	  r2dTxHeader.StdId = 0x016; //id pacchetto
@@ -73,11 +73,11 @@ void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Prescaler = 8;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = ENABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
@@ -89,14 +89,7 @@ void MX_CAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN1_Init 2 */
-  void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
-      if (HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
-          process_can_message(&RxHeader, RxData);
-      }
-      else{
-      	Error_Handler();
-      }
-  }
+
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -113,23 +106,25 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     /* CAN1 clock enable */
     __HAL_RCC_CAN1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**CAN1 GPIO Configuration
-    PA11     ------> CAN1_RX
-    PA12     ------> CAN1_TX
+    PB8     ------> CAN1_RX
+    PB9     ------> CAN1_TX
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
     HAL_NVIC_SetPriority(CAN1_TX_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
     HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -148,14 +143,15 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     __HAL_RCC_CAN1_CLK_DISABLE();
 
     /**CAN1 GPIO Configuration
-    PA11     ------> CAN1_RX
-    PA12     ------> CAN1_TX
+    PB8     ------> CAN1_RX
+    PB9     ------> CAN1_TX
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
 
     /* CAN1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
     HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+    HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */
@@ -164,17 +160,27 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
 /* USER CODE BEGIN 1 */
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+		HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
+        process_can_message(&RxHeader, RxData);
+    }
+    else{
+    	Error_Handler();
+    }
+}
 void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
     switch(RxHeader->StdId){
 		case 0x012:	//brakeLight -> frenoPremuto	--> in decimale
 			freniData = buf[0] & 0x01;	//Estrai solo il bit più basso
-			HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 			break;
 		case 0x024:
 			if(RxHeader->DLC == 4){
 		        int tempFan1 = (uint16_t)(buf[1] << 8 | buf[0]);
 		        int tempFan2 = (uint16_t)(buf[3] << 8 | buf[2]);
 		        tempAvgFan = (uint16_t)((tempFan1 + tempFan2) / 2);
+
 			}
 		case 0x021:
 			if(RxHeader->DLC == 6){
@@ -184,38 +190,52 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			break;
 		case 0x023:
 			if(RxHeader->DLC == 8){
+				/*
 		        int tempMot1 = (uint16_t)(buf[1] << 8 | buf[0]);  // SX (Corretto)
 		        int tempMot2 = (uint16_t)(buf[3] << 8 | buf[2]);  // DX (Corretto)
 		        tempAvgMot = (uint16_t)((tempMot1 + tempMot2) / 2);
 		        int tempInverter1 = (uint16_t)(buf[5] << 8 | buf[4]); // Corretto
 		        int tempInverter2 = (uint16_t)(buf[7] << 8 | buf[6]); // Corretto
 		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
+		        */
+		        int tempMot1 = (uint16_t)(buf[0] << 8 | buf[1]);
+		        int tempMot2 = (uint16_t)(buf[2] << 8 | buf[3]);
+		        tempAvgMot = (uint16_t)((tempMot1 + tempMot2) / 2);
+		        int tempInverter1 = (uint16_t)(buf[4] << 8 | buf[5]);
+		        int tempInverter2 = (uint16_t)(buf[6] << 8 | buf[7]);
+		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
 				flags[2] = 1;
 				flags[3] = 1;
 			}
 			break;
-		case 0x040:	//velocita angolari ruote
+		case 0x031:		//RPM x TEST
+				if(RxHeader->DLC == 2){
+					vehicleSpeed = (uint16_t)(buf[0] | (buf[1] << 8));
+					flags[0] = 1;
+				}
+		case 0x030:	//velocita angolari ruote
 			//lettura in Little-Endian
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+			break;
 			if(RxHeader->DLC == 4){
 				int16_t val1 = (int16_t)(buf[0] | (buf[1] << 8));  // Byte 0-1	velocita angolare delle due ruote
 				int16_t val2 = (int16_t)(buf[2] | (buf[3] << 8));  // Byte 2-3
 				//lettura in Big-Endian
 				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
 				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
-
 				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
 				vehicleSpeed = (uint8_t)((val1+val2)/2);
 				flags[0] = 1;
 			}
 			break;
+
 		case 0x026:	//stato percentuale batteria
 			if(RxHeader->DLC == 1){
 				statoBatteria = (uint16_t)(buf[0]);
 				flags[6]=1;
 			}
 			break;
-
-		//ERRORI
+			//ERRORI
 			/*
 		case 0x001:
 			if (!flagErroreInCorso){
