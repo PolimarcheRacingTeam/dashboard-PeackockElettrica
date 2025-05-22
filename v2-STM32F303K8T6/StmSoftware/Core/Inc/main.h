@@ -82,6 +82,11 @@ void Error_Handler(void);
 extern volatile uint8_t flagErroreInCorso;
 extern uint16_t ultimoErroreRicevuto;
 
+#define sogliaTempBatteria 60
+#define sogliaTempMotori 60
+#define sogliaTempInverter 60
+#define sogliaTempFan 60
+
 #define raggioRuota 0.225	//in metri
 extern uint16_t freniData;
 extern uint16_t r2dData;
