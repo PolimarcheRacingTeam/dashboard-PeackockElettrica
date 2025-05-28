@@ -85,7 +85,7 @@ uint8_t flags[Ndata];
 uint32_t lastMillis[Ndata];
 uint16_t* arrayData[Ndata] = {&vehicleSpeed,&tempBatteries,&tempAvgMot,&tempAvgInverter,&tempAvgFan,&mapData,&statoBatteria,&r2dData,&flagError};
 
-uint8_t tempo = 0;
+int long tempo = 0;
 //arrayData = array di PUNTATORI delle variabili contenenti i dati
 /*
 arrayData[0] = vehicleSpeed
@@ -146,14 +146,15 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
-  HAL_Delay(500);
+  HAL_Delay(200);
   len = sprintf(msg, "page logoStart");
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-  HAL_Delay(2000);	//delay
+  HAL_Delay(1500);	//delay
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 
 
@@ -169,6 +170,8 @@ int main(void)
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 
+  HAL_TIM_Base_Start_IT(&htim7);
+
   CAN_setup();	//avvia il CAN + filtro
 
   /* USER CODE END 2 */
@@ -178,8 +181,10 @@ int main(void)
   while (1)
   { currMillis = HAL_GetTick();
 
-/*
-	  if(tempo == 10){
+
+
+	 // if(tempo >= 100000){
+  	  if(tempo > 10000){
 		  //CODICE PER GENERARE DATI FITTIZI
 		  *arrayData[0] = rand()%200;			//speed
 		  *arrayData[1] = rand()%100;				//temp batt
@@ -197,7 +202,9 @@ int main(void)
 		  }
 
 		  tempo = 0;
-	  }*/
+	  }
+
+
 
 	  if(!flagNewMap){
 		  for(uint8_t i=0;i<Ndata;i++ ){
@@ -288,8 +295,92 @@ void SystemClock_Config(void)
 void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può essere txt o val
 	char buff[50];
 	int len;
-	switch (index){	//battery bar value + %
-		case 6:
+	switch (index){
+		case 1:	//temp Batteries
+			if(valore > sogliaTempBatteria){
+				len = sprintf(buff,"TempBat.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t8.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			else{
+				len = sprintf(buff,"TempBat.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t8.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 2:	//temp Engine
+			if(valore > sogliaTempMotori){
+				len = sprintf(buff,"TempEng.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t7.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			else{
+				len = sprintf(buff,"TempEng.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t7.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 3:	//temp Inver
+			if(valore > sogliaTempInverter){
+				len = sprintf(buff,"TempInv.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t6.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			else{
+				len = sprintf(buff,"TempInv.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t6.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 4:	//temp Fan
+			if(valore > sogliaTempFan){
+				len = sprintf(buff,"TempFan.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t9.bco=63488");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			else{
+				len = sprintf(buff,"TempFan.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+				len = sprintf(buff,"t9.bco=0");	//rosso
+				HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			}
+			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
+			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
+			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			break;
+		case 6://battery bar value + %
 			len = sprintf(buff,"%s=%d",elemento,valore);
 			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
@@ -362,8 +453,6 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			len = sprintf(buff,"%s=\"%d\"",elemento,valore);
 			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart2,(uint8_t*)buff,len,HAL_MAX_DELAY);
-
 			break;
 		}
 }

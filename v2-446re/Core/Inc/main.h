@@ -81,7 +81,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 
-#define Ndata 9 //numero dati totale da visualizzare su display
+#define Ndata 10 //numero dati totale da visualizzare su display
 #define NFlagsInterrupt 1
 
 
@@ -100,6 +100,11 @@ extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
 extern uint8_t pageRefreshata;
+
+#define sogliaTempBatteria 60
+#define sogliaTempMotori 60
+#define sogliaTempInverter 60
+#define sogliaTempFan 60
 
 extern uint8_t errorValue;
 extern uint8_t flagError;
