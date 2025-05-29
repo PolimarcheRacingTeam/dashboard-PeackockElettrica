@@ -152,11 +152,11 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_TIM7_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-  CAN_setup();	//avvia il CAN + filtro
   HAL_Delay(100);
 
   len = sprintf(msg, "page logoStart");
@@ -173,6 +173,11 @@ int main(void)
   len = sprintf(msg, "vis ErrorBar2,0");
   HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+
+  HAL_TIM_Base_Start_IT(&htim7);
+
+  CAN_setup();	//avvia il CAN + filtro
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -180,8 +185,8 @@ int main(void)
   while (1)
   {	   currMillis = HAL_GetTick();
 
-
-  	  if(tempo == 10){/*
+/*
+  	  if(tempo == 10){
   		  //CODICE PER GENERARE DATI FITTIZI
   		  *arrayData[0] = rand()%200;			//speed
   		  *arrayData[1] = rand()%100;				//temp batt
@@ -197,11 +202,11 @@ int main(void)
   		   * for(uint8_t i = 0; i<Ndata;i++){
   			  flags[i]=1;
   		  }
-  		  */
+
   		  tempo = 0;
-
-
   	  }
+  	  */
+
 
   	  if(!flagNewMap){
   		  for(uint8_t i=0;i<Ndata;i++ ){
