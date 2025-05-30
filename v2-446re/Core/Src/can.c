@@ -213,6 +213,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 					vehicleSpeed = (uint16_t)(buf[0] | (buf[1] << 8));
 					flags[0] = 1;
 				}
+				break;
 		case 0x030:	//velocita angolari ruote
 			//lettura in Little-Endian
 			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
@@ -233,6 +234,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if(RxHeader->DLC == 1){
 				statoBatteria = (uint16_t)(buf[0]);
 				flags[6]=1;
+
+				canBUS_RX++;
 			}
 			break;
 			//ERRORI

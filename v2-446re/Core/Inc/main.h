@@ -84,6 +84,10 @@ void Error_Handler(void);
 #define Ndata 10 //numero dati totale da visualizzare su display
 #define NFlagsInterrupt 1
 
+extern int canBUS_RX;
+extern int USART_TX;
+
+extern volatile uint8_t uart_ready;
 
 extern volatile uint8_t flagErroreInCorso;
 extern uint16_t ultimoErroreRicevuto;

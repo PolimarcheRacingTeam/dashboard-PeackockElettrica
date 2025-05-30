@@ -52,6 +52,8 @@
 volatile uint8_t flagErroreInCorso = 0;
 uint16_t ultimoErroreRicevuto = 0;
 
+int canBUS_RX = 0;
+int USART_TX = 0;
 
 volatile uint8_t flagOK = 0;
 volatile uint8_t flagNewMap=0;
@@ -119,7 +121,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	  char msg[40] = " ";
+	  char msg[60] = " ";
 	  int len;
   /* USER CODE END 1 */
 
@@ -146,7 +148,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  MX_TIM7_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
@@ -170,7 +172,9 @@ int main(void)
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
 
-  HAL_TIM_Base_Start_IT(&htim7);
+  HAL_TIM_Base_Start_IT(&htim6);
+
+
 
   CAN_setup();	//avvia il CAN + filtro
 
@@ -182,7 +186,7 @@ int main(void)
   { currMillis = HAL_GetTick();
 
 
-
+/*
 	 // if(tempo >= 100000){
   	  if(tempo > 10000){
 		  //CODICE PER GENERARE DATI FITTIZI
@@ -203,7 +207,7 @@ int main(void)
 
 		  tempo = 0;
 	  }
-
+*/
 
 
 	  if(!flagNewMap){
@@ -229,6 +233,9 @@ int main(void)
 	  }
   }
 
+  len = sprintf(msg, "signal.val=1");
+  HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
   /*
   if (vehicleSpeed == 252){
 	  newData++;
@@ -398,6 +405,7 @@ void NEXTION_SendString (char* elemento,int valore,int index){ //tipo può esser
 			len = sprintf(buff,"BatteryValTex.txt=\"%d\"",valore);
 			HAL_UART_Transmit(&huart1,(uint8_t*)buff,len,HAL_MAX_DELAY);
 			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY);
+			USART_TX++;
 			break;
 		case 7:	//r2d
 			switch (r2dData){
