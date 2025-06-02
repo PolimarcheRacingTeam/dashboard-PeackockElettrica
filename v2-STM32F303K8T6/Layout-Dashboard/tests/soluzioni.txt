@@ -1,0 +1,83 @@
+STATO TEST Display-DASHBOARD
+Problema. 
+St probabilmente non riesce a mandare via USART tutti i dati che riceve via CAN
+
+SOLUZIONE 1: 
+ridurre i messaggi inviati, quindi unire comando con cmd_end -> metta dei messaggi ma leggermente piu lunghi
+
+Andamento:
+mess CAN RX = 501
+mess USART TX = 159
+mess CAN RX = 1001
+mess USART TX = 319
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+SOLUZIONE 2:
+Inserisco dele variabili sul nextion -> carico solo i valori di queste variabili e i testi/stati li aggiorna il nextion ogni 50ms
+
+Andamento:
+
+mess CAN RX = 500
+mess USART TX = 291
+mess CAN RX = 1001
+mess USART TX = 583
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+SOLUZIONE 3:
+Uso di HAL_Transmit_UART_IT -> creao una coda che viene processata ogni volta che il messaggio precedente viene inviato
+(alcuni valori ottimizzati, altri peggiorati
+Progetto: 46re_USARTIT
+(trasfmerimento sempre esegutio dalla CPU)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+SOLUZIONE 4:
+DMA = Direct Memory Access
+Provato, molto piu lento perchè consigliato esclusivamente per quantità di byte più elevata, NON messaggi piccoli e frequenti.
+//////////////////////////////////////////////////////////////////////////////////////////////////
+SOLUZIONE 5: AUMENTO BAUDRATE a 921600
+
+riprovo SOLUZIONE 1: 
+ridurre i messaggi inviati, quindi unire comando con cmd_end -> metta dei messaggi ma leggermente piu lunghi
+
+
+mess CAN RX = 499
+mess USART TX = 496
+mess CAN RX = 999
+mess USART TX = 993
+
+sembrebbe bene ma in realta ancora molti non li vede, seppur meglio
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+SOLUZIONE 2:
+Inserisco dele variabili sul nextion -> carico solo i valori di queste variabili e i testi/stati li aggiorna il nextion ogni 50ms
+
+Andamento:
+
+mess CAN RX = 500
+mess USART TX = 500
+mess CAN RX = 1000
+mess USART TX = 1000
+
+PERO ANCORA è lento nel refresh....
+📟 2. Nextion è lento a processare
+
+    Il Nextion (specialmente le versioni Basic) ha una CPU interna relativamente lenta. Cambiare valori visivi, immagini o grafici può richiedere tempo.
+
+    Se stai aggiornando molti oggetti (es. più di 2-3 componenti) contemporaneamente, il display non riesce a stare al passo.
+
+Soluzione:
+
+    Minimizza gli aggiornamenti: aggiorna solo ciò che è cambiato.
+
+    Evita di aggiornare lo stesso oggetto più volte al secondo.
+
+    Usa ref (refresh) solo quando necessario.
+
+	

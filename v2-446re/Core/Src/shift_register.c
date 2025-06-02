@@ -31,7 +31,7 @@ int determineSituation(uint8_t data) {
         case 0b00000001: return 1; // Situazione 1
         case 0b00000010: return 2; // Situazione 2
         case 0b00000100: return 3; // Situazione 3
-        case 0b00001000: return 4; // Situazione 4
+        case 0b00001000: return 4; // Situazione 4s
         case 0b00010000: return 5; // Situazione 5
         case 0b00100000: return 6; // Situazione 6
         case 0b01000000: return 7; // Situazione 7
@@ -45,21 +45,19 @@ int determineSituation(uint8_t data) {
 int checkMapValue(void){
 	//uint8_t newData = determineSituation(readShiftRegister());
 	//uint16_t newData = *arrayData[8];
-	if (!flagNewMap && *arrayData[5]!=newData){				//no pop up in corso
-		*arrayData[5] = newData;
+	if (!flagNewMap && mapData!=newData){				//no pop up in corso
 		if(newData==-1){
 			//errore nella lettura
 			flagErroreInCorso=1;
-			errorValue = 10;
+			errorValue = 131;
 			NEXTION_SendString("ErrorValue.txt",0, 11);
 			ultimoErroreRicevuto = HAL_GetTick();
 			HAL_TIM_Base_Start_IT(&htim2);
 		}
 		else{
-			flagError = 0;
-			flags[5] = 1;
-			flagNewMap=1;
-			HAL_CAN_AddTxMessage(&hcan, &mapTxHeader, &*arrayData[8], &TxMailbox);
+			mapData = newData;
+			vars[6].flag = 1;
+			HAL_CAN_AddTxMessage(&hcan1, &mapTxHeader, &mapData, &TxMailbox);
 			return 1;
 		}
 	}

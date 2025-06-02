@@ -1,0 +1,11 @@
+/*
+* 1 - speed
+* 2 - SOC
+* 3 - tmpInverter
+* 4 - tmpEngine
+* 5 - tmpBatteries
+* 6 - tmpFans
+* 7 - Engine MAP
+* 8 - R2D
+* 9 - ErrorValue
+*/

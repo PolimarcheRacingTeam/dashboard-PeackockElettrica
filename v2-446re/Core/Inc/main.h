@@ -65,6 +65,12 @@ void Error_Handler(void);
 #define B1_EXTI_IRQn EXTI15_10_IRQn
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define r2dButton_Pin GPIO_PIN_4
+#define r2dButton_GPIO_Port GPIOC
+#define r2dButton_EXTI_IRQn EXTI4_IRQn
+#define resetButton_Pin GPIO_PIN_5
+#define resetButton_GPIO_Port GPIOC
+#define resetButton_EXTI_IRQn EXTI9_5_IRQn
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
@@ -81,7 +87,28 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 
-#define Ndata 10 //numero dati totale da visualizzare su display
+#define NData 9 //total data displayer on the screen
+/*
+ * 1 - speed
+ * 2 - SOC
+ * 3 - tmpInverter
+ * 4 - tmpEngine
+ * 5 - tmpBatteries
+ * 6 - tmpFans
+ * 7 - Engine MAP
+ * 8 - R2D
+ * 9 - ErrorValue
+ */
+
+typedef struct{
+	char element[50];
+	uint16_t* value;
+	uint8_t flag;
+	//uint16_t lastSent;
+} DisplayElement;
+
+extern DisplayElement vars[NData];
+
 #define NFlagsInterrupt 1
 
 extern int canBUS_RX;
@@ -92,7 +119,7 @@ extern volatile uint8_t uart_ready;
 extern volatile uint8_t flagErroreInCorso;
 extern uint16_t ultimoErroreRicevuto;
 
-#define raggioRuota 0.225	//in metri
+#define raggioRuota 0.225	//metres
 extern uint16_t freniData;
 extern uint16_t r2dData;
 extern uint8_t RxData[8];
@@ -105,11 +132,6 @@ extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
 extern uint8_t pageRefreshata;
 
-#define sogliaTempBatteria 60
-#define sogliaTempMotori 60
-#define sogliaTempInverter 60
-#define sogliaTempFan 60
-
 extern uint8_t errorValue;
 extern uint8_t flagError;
 extern char errorName[20];
@@ -118,23 +140,19 @@ extern uint32_t millisFlagsInterrupt[NFlagsInterrupt];
 extern volatile uint8_t flagsUsable[NFlagsInterrupt];
 
 extern uint16_t vehicleSpeed;
-extern uint16_t tempBatteries;
-extern uint16_t voltBattery;
+extern uint16_t tempAvgBat;
 extern uint16_t tempAvgMot;
 extern uint16_t tempAvgInverter;
+extern uint16_t battery_SOC;
 extern uint16_t tempAvgFan;
-extern uint16_t statoBatteria;
-extern char names[Ndata][50];
+extern uint8_t newData;
 extern uint8_t cmd_end[3];
 
-extern uint8_t flags[Ndata];	//struttura che contiene i flag dei valori che si sono aggiornati
-extern uint16_t* arrayData[Ndata];
 
-extern volatile uint8_t flagOK;
+extern volatile uint8_t flagStartingOK;
 extern uint8_t newData;
 extern volatile uint8_t flagNewMap;
 
-extern uint32_t lastMillis[Ndata];
 
 
 /* USER CODE END Private defines */

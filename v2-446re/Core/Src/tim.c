@@ -43,9 +43,9 @@ void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 4799;
+  htim2.Init.Prescaler = 3599;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 19999;
+  htim2.Init.Period = 24999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -83,9 +83,9 @@ void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 4799;
+  htim3.Init.Prescaler = 3599;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 19999;
+  htim3.Init.Period = 17999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -126,7 +126,7 @@ void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 4799;
+  htim6.Init.Prescaler = 3599;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 49999;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -245,15 +245,15 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	if (flagOK){
+	if (flagStartingOK==1){
 		char msg[30] = " ";
 		int len = 0;
 		if(htim->Instance == TIM3){
 			len = sprintf(msg,"page main");
-			HAL_UART_Transmit(&huart1, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
+			msg[len]=0xFF;msg[len+1]=0xFF;msg[len+2]=0xFF;
+			HAL_UART_Transmit(&huart1,(uint8_t*)msg,len+3,HAL_MAX_DELAY);
 			HAL_TIM_Base_Stop_IT(&htim3);
-			flags[5]=1;
+			vars[6].flag=1;
 			flagNewMap=0;
 		}
 		if (htim->Instance == TIM2){
@@ -266,12 +266,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 				}
 			}
 		}
-		/*
-		if(htim->Instance == TIM7){
-			len = sprintf(msg,"signal.val=1");
-			HAL_UART_Transmit(&huart1, &msg, len, HAL_MAX_DELAY);
-			HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-		}*/
 		if(htim->Instance == TIM6){
 			len = sprintf(msg,"mess CAN RX = %d\n\r",canBUS_RX);
 			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);

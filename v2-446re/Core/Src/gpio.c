@@ -22,7 +22,6 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -69,6 +68,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : r2dButton_Pin resetButton_Pin */
+  GPIO_InitStruct.Pin = r2dButton_Pin|resetButton_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
   /*Configure GPIO pin : SR_DATA_Pin */
   GPIO_InitStruct.Pin = SR_DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -83,6 +88,12 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -90,25 +101,25 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	if (flagOK==1){
+	if (flagStartingOK == 1){
 		if (GPIO_Pin == B1_Pin){
 			HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 			HAL_CAN_AddTxMessage(&hcan1, &r2dTxHeader, &r2dData, &TxMailbox);
 
 		}
-		/*
+
 		switch (GPIO_Pin){
 			case r2dButton_Pin:
 				if(flagsUsable[0]==1){
 					if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
 						if(freniData && !r2dData){
 							r2dData = 1;
-							flags[7] = 1;
+							vars[7].flag = 1;
 						} else if(freniData && r2dData){
 							r2dData = 0;
-							flags[7] = 1;
+							vars[7].flag = 1;
 						}
-						HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+						HAL_CAN_AddTxMessage(&hcan1, &r2dTxHeader, &r2dData, &TxMailbox);
 						flagsUsable[0] = 0;
 						millisFlagsInterrupt[0] = HAL_GetTick();
 					}
@@ -121,7 +132,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				}
 				break;
 			}
-			*/
+
+
+
 	}
 }
 /* USER CODE END 2 */
