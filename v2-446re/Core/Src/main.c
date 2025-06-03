@@ -52,10 +52,6 @@
 
 volatile uint8_t flagErroreInCorso = 0;
 uint16_t ultimoErroreRicevuto = 0;
-
-
-
-
 /*
 * 1 - speed
 * 2 - SOC
@@ -96,25 +92,20 @@ volatile uint8_t flagsUsable[NFlagsInterrupt] = {1};
 
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF}; //per inviare il comando
 
-
 DisplayElement vars[NData] =  {
-		{"SpeedValue.txt",&vehicleSpeed,1},
-		{"valSOC.val",&battery_SOC,1},
-		{"valTempInv.val",&tempAvgInverter,1},
-		{"valTempEng.val",&tempAvgMot,1},
-		{"valTempBat.val",&tempAvgBat,1},
-		{"valTempFan.val",&tempAvgFan,1},	//5
-		{"MapValue.txt",&mapData,0},
-		{"R2DValue.pco",&r2dData,0},
-		{"ErrorValue.txt",&errorValue,0}
+		{"SpeedValue.txt",&vehicleSpeed,1,0},
+		{"valSOC.val",&battery_SOC,1,0},
+		{"valTempInv.val",&tempAvgInverter,1,0},
+		{"valTempEng.val",&tempAvgMot,1,0},
+		{"valTempBat.val",&tempAvgBat,1,0},
+		{"valTempFan.val",&tempAvgFan,1,0},	//5
+		{"MapValue.txt",&mapData,0,0},
+		{"R2DValue.pco",&r2dData,0,0},
+		{"ErrorValue.txt",&errorValue,0,0}
 };
 //		*(vars[i].value)
 
 uint32_t lastSignal = 0;
-
-int tempo = 0;
-//arrayData = array di PUNTATORI delle variabili contenenti i dati
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -171,17 +162,13 @@ int main(void)
   len = sprintf(msg, "page logoStart");
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-  HAL_Delay(1000);	//delay - animation
+  HAL_Delay(1200);	//delay - animation
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 
   uint32_t currMillis = HAL_GetTick();
   len = sprintf(msg, "page main");
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
-
-  HAL_TIM_Base_Start_IT(&htim6);
-
-
 
   CAN_setup();	//avvia il CAN + filtro
 
@@ -196,9 +183,10 @@ int main(void)
 
 	  if(!flagNewMap){
 		  for(uint8_t i=0;i<NData;i++ ){
-			  if (vars[i].flag == 1){
+			  if (vars[i].flag == 1 || vars[i].lastSent-currMillis>2000){
 				  //to send to the nextion
 				  vars[i].flag = 0;
+				  vars[i].lastSent=currMillis;
 				  NEXTION_SendString(vars[i].element,*vars[i].value, i);
 				  HAL_Delay(1);
 			  }
@@ -208,40 +196,25 @@ int main(void)
 		  }
 	  }
 
-
   for (uint8_t i=0;i<NFlagsInterrupt;i++){						//aiuta ad evitare doppio click
 	  if(!flagsUsable[i]){
-		  if(currMillis - millisFlagsInterrupt[i] > 700){
+		  if(HAL_GetTick() - millisFlagsInterrupt[i] > 750){
 				 flagsUsable[i] = 1;
 		  }
 	  }
   }
 
-
   currMillis = HAL_GetTick();
-  if(currMillis-lastSignal>1000){
+  if(currMillis-lastSignal>1200){
   	  len = sprintf(msg, "signal.val=1");
   	  msg[len]=0xFF;msg[len+1]=0xFF;msg[len+2]=0xFF;
   	  HAL_UART_Transmit(&huart1,(uint8_t*)msg,len+3,HAL_MAX_DELAY);
   	  lastSignal = currMillis;
   }
 
-  if(vehicleSpeed==100){
-	  HAL_UART_Transmit(&huart2,(uint8_t*)"100",strlen("100"),HAL_MAX_DELAY);
-	  if(!flagNewMap){
-		  //newData++;
-	  }
-  }
-  /*
-  if (vehicleSpeed == 252){
-	  newData++;
-	  vehicleSpeed++;
-  }*/
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  	  tempo++;
   }
   /* USER CODE END 3 */
 }
@@ -378,8 +351,12 @@ void MapValue(){
 }
 
 void system_reset() {
-	__disable_irq(); // Disabilita tutti gli interrupt
-	NVIC_SystemReset();	//resetta il microcontrollore, senza togliere l'alimentazione dai pin
+	char msg[35] = " ";
+	int len = sprintf(msg,"rest");
+	msg[len]=0xFF;msg[len+1]=0xFF;msg[len+2]=0xFF;
+	HAL_UART_Transmit_IT(&huart1,(uint8_t*)msg,len+3);
+	__disable_irq(); //disable all interrupts
+	NVIC_SystemReset();	//reset the microcontroller, continue to power pins
 }
 
 /* USER CODE END 4 */

@@ -266,13 +266,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 				}
 			}
 		}
-		if(htim->Instance == TIM6){
-			len = sprintf(msg,"mess CAN RX = %d\n\r",canBUS_RX);
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-
-			len = sprintf(msg,"mess USART TX = %d\n\r",USART_TX);
-			HAL_UART_Transmit(&huart2, &msg, len, HAL_MAX_DELAY);
-		}
 	}
 }
 /* USER CODE END 1 */

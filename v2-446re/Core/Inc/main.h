@@ -104,7 +104,7 @@ typedef struct{
 	char element[50];
 	uint16_t* value;
 	uint8_t flag;
-	//uint16_t lastSent;
+	uint32_t lastSent;
 } DisplayElement;
 
 extern DisplayElement vars[NData];
