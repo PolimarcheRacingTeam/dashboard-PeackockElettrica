@@ -75,32 +75,31 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	if (flagOK==1){
-		switch (GPIO_Pin){
-			case r2dButton_Pin:
-				if(flagsUsable[0]==1){
-					if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
-						if(freniData && !r2dData){
-							r2dData = 1;
-							flags[7] = 1;
-						} else if(freniData && r2dData){
-							r2dData = 0;
-							flags[7] = 1;
+	if (flagStartingOK == 1){
+			switch (GPIO_Pin){
+				case r2dButton_Pin:
+					if(flagsUsable[0]==1){
+						if (HAL_GPIO_ReadPin(r2dButton_GPIO_Port, r2dButton_Pin) == GPIO_PIN_RESET){
+							if(freniData && !r2dData){
+								r2dData = 1;
+								vars[7].flag = 1;
+							} else if(freniData && r2dData){
+								r2dData = 0;
+								vars[7].flag = 1;
+							}
+							HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
+							flagsUsable[0] = 0;
+							millisFlagsInterrupt[0] = HAL_GetTick();
 						}
-						HAL_CAN_AddTxMessage(&hcan, &r2dTxHeader, &r2dData, &TxMailbox);
-						flagsUsable[0] = 0;
-						millisFlagsInterrupt[0] = HAL_GetTick();
 					}
+					break;
+				case resetButton_Pin:
+					if (HAL_GPIO_ReadPin(resetButton_GPIO_Port, resetButton_Pin) == GPIO_PIN_RESET){
+						system_reset();
+					}
+					break;
 				}
-				break;
-			case resetButton_Pin:
-				if (HAL_GPIO_ReadPin(resetButton_GPIO_Port, resetButton_Pin) == GPIO_PIN_RESET){
-					system_reset();
-					//newData++;
-				}
-				break;
-			}
-	}
+		}
 }
 
 	/*

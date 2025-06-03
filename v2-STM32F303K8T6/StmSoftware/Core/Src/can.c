@@ -69,11 +69,11 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 6;
+  hcan.Init.Prescaler = 9;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_5TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_3TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -159,21 +159,23 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
     switch(RxHeader->StdId){
 		case 0x012:	//brakeLight -> frenoPremuto	--> in decimale
 			freniData = buf[0] & 0x01;	//Estrai solo il bit più basso
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 			break;
-		case 0x024:
+		case 0x024:	//tmpFans
 			if(RxHeader->DLC == 4){
-		        int tempFan1 = (uint16_t)(buf[1] << 8 | buf[0]);
-		        int tempFan2 = (uint16_t)(buf[3] << 8 | buf[2]);
-		        tempAvgFan = (uint16_t)((tempFan1 + tempFan2) / 2);
+		        uint16_t tempCool1 = (uint16_t)(buf[0] << 8 | buf[1]);
+		        uint16_t tempCool2 = (uint16_t)(buf[2] << 8 | buf[3]);
+		        tempAvgFan = (uint16_t)((tempCool1 + tempCool2) / 2);
+		        vars[5].flag=1;
+
 			}
-		case 0x021:
+		case 0x021:	//tmpBatteries
 			if(RxHeader->DLC == 6){
-				tempBatteries = (uint8_t)((buf[0]+buf[1]+buf[2]+buf[3]+buf[4]+buf[5])/6); //temperatura media Pacco Batteria
-				flags[1] = 1;
+				tempAvgBat = (uint8_t)((buf[0]+buf[1]+buf[2]+buf[3]+buf[4]+buf[5])/6); //temperatura media Pacco Batteria
+				vars[4].flag=1;
 			}
 			break;
-
-		case 0x023:
+		case 0x023:	//tmpEngine and tmpInverter
 			if(RxHeader->DLC == 8){
 				/*
 		        int tempMot1 = (uint16_t)(buf[1] << 8 | buf[0]);  // SX (Corretto)
@@ -183,21 +185,22 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		        int tempInverter2 = (uint16_t)(buf[7] << 8 | buf[6]); // Corretto
 		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
 		        */
-		        int tempMot1 = (uint16_t)(buf[0] << 8 | buf[1]);
-		        int tempMot2 = (uint16_t)(buf[2] << 8 | buf[3]);
+				uint16_t tempMot1 = (uint16_t)(buf[0] << 8 | buf[1]);
+				uint16_t tempMot2 = (uint16_t)(buf[2] << 8 | buf[3]);
 		        tempAvgMot = (uint16_t)((tempMot1 + tempMot2) / 2);
-		        int tempInverter1 = (uint16_t)(buf[4] << 8 | buf[5]);
-		        int tempInverter2 = (uint16_t)(buf[6] << 8 | buf[7]);
+		        uint16_t tempInverter1 = (uint16_t)(buf[4] << 8 | buf[5]);
+		        uint16_t tempInverter2 = (uint16_t)(buf[6] << 8 | buf[7]);
 		        tempAvgInverter = (uint16_t)((tempInverter1 + tempInverter2) / 2);
-				flags[2] = 1;
-				flags[3] = 1;
+		        vars[2].flag=1;
+		        vars[3].flag=1;
 			}
 			break;
 		case 0x031:		//RPM x TEST
 				if(RxHeader->DLC == 2){
 					vehicleSpeed = (uint16_t)(buf[0] | (buf[1] << 8));
-					flags[0] = 1;
+					vars[0].flag=1;
 				}
+				break;
 		case 0x030:	//velocita angolari ruote
 			//lettura in Little-Endian
 			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
@@ -210,18 +213,20 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
 				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
 				vehicleSpeed = (uint8_t)((val1+val2)/2);
-				flags[0] = 1;
-			}
-			break;
-		case 0x026:	//stato percentuale batteria
-			if(RxHeader->DLC == 1){
-				statoBatteria = (uint16_t)(buf[0]);
-				flags[6]=1;
+				vars[0].flag=1;
 			}
 			break;
 
-		//ERRORI
-			/*
+		case 0x026:	//SoC
+			if(RxHeader->DLC == 1){
+				battery_SOC = (uint16_t)(buf[0]);
+				vars[1].flag=1;
+
+				canBUS_RX++;
+			}
+			break;
+			//ERRORI
+
 		case 0x001:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
@@ -276,7 +281,6 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
 			break;
-			*/
     }
 }
 /* USER CODE END 1 */

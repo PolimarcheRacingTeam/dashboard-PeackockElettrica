@@ -114,8 +114,6 @@ extern DisplayElement vars[NData];
 extern int canBUS_RX;
 extern int USART_TX;
 
-extern volatile uint8_t uart_ready;
-
 extern volatile uint8_t flagErroreInCorso;
 extern uint16_t ultimoErroreRicevuto;
 
@@ -128,9 +126,7 @@ extern CAN_TxHeaderTypeDef r2dTxHeader, mapTxHeader;
 extern CAN_FilterTypeDef can_filter;
 extern CAN_RxHeaderTypeDef RxHeader;
 extern uint32_t TxMailbox;
-extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
-extern uint8_t pageRefreshata;
 
 extern uint8_t errorValue;
 extern uint8_t flagError;
@@ -148,12 +144,9 @@ extern uint16_t tempAvgFan;
 extern uint8_t newData;
 extern uint8_t cmd_end[3];
 
-
 extern volatile uint8_t flagStartingOK;
 extern uint8_t newData;
 extern volatile uint8_t flagNewMap;
-
-
 
 /* USER CODE END Private defines */
 

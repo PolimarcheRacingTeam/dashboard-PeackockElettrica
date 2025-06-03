@@ -75,9 +75,30 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
-#define Ndata 9 //numero dati totale da visualizzare su display
-#define NFlagsInterrupt 1
 
+#define NData 9 //total data displayer on the screen
+/*
+ * 1 - speed
+ * 2 - SOC
+ * 3 - tmpInverter
+ * 4 - tmpEngine
+ * 5 - tmpBatteries
+ * 6 - tmpFans
+ * 7 - Engine MAP
+ * 8 - R2D
+ * 9 - ErrorValue
+ */
+
+typedef struct{
+	char element[50];
+	uint16_t* value;
+	uint8_t flag;
+	uint32_t lastSent;
+} DisplayElement;
+
+extern DisplayElement vars[NData];
+
+#define NFlagsInterrupt 1
 
 extern volatile uint8_t flagErroreInCorso;
 extern uint16_t ultimoErroreRicevuto;
@@ -98,7 +119,6 @@ extern CAN_RxHeaderTypeDef RxHeader;
 extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 extern UART_HandleTypeDef huart2;
-extern uint8_t pageRefreshata;
 
 extern uint8_t errorValue;
 extern uint8_t flagError;
@@ -107,25 +127,21 @@ extern char errorName[20];
 extern uint32_t millisFlagsInterrupt[NFlagsInterrupt];
 extern volatile uint8_t flagsUsable[NFlagsInterrupt];
 
+extern uint32_t millisFlagsInterrupt[NFlagsInterrupt];
+extern volatile uint8_t flagsUsable[NFlagsInterrupt];
+
 extern uint16_t vehicleSpeed;
-extern uint16_t tempBatteries;
-extern uint16_t voltBattery;
+extern uint16_t tempAvgBat;
 extern uint16_t tempAvgMot;
 extern uint16_t tempAvgInverter;
+extern uint16_t battery_SOC;
 extern uint16_t tempAvgFan;
-extern uint16_t statoBatteria;
-extern char names[Ndata][50];
+extern uint8_t newData;
 extern uint8_t cmd_end[3];
 
-extern uint8_t flags[Ndata];	//struttura che contiene i flag dei valori che si sono aggiornati
-extern uint16_t* arrayData[Ndata];
-
-extern volatile uint8_t flagOK;
+extern volatile uint8_t flagStartingOK;
 extern uint8_t newData;
 extern volatile uint8_t flagNewMap;
-
-extern uint32_t lastMillis[Ndata];
-
 
 /* USER CODE END Private defines */
 

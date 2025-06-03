@@ -102,12 +102,13 @@ void MX_GPIO_Init(void)
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if (flagStartingOK == 1){
+		/*		DEBUGGING
 		if (GPIO_Pin == B1_Pin){
 			HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 			HAL_CAN_AddTxMessage(&hcan1, &r2dTxHeader, &r2dData, &TxMailbox);
 
 		}
-
+		*/
 		switch (GPIO_Pin){
 			case r2dButton_Pin:
 				if(flagsUsable[0]==1){
@@ -128,13 +129,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			case resetButton_Pin:
 				if (HAL_GPIO_ReadPin(resetButton_GPIO_Port, resetButton_Pin) == GPIO_PIN_RESET){
 					system_reset();
-					//newData++;
 				}
 				break;
 			}
-
-
-
 	}
 }
 /* USER CODE END 2 */
