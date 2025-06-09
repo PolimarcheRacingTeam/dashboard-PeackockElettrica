@@ -1,3 +1,0 @@
-../Core/Src/gpio.c:42:6:MX_GPIO_Init	1
-../Core/Src/gpio.c:135:6:cambiaPagina	8
-../Core/Src/gpio.c:83:6:HAL_GPIO_EXTI_Callback	17
