@@ -60,8 +60,8 @@ all: main-build
 main-build: softwareDisplay24-25_f446re.elf secondary-outputs
 
 # Tool invocations
-softwareDisplay24-25_f446re.elf softwareDisplay24-25_f446re.map: $(OBJS) $(USER_OBJS) E:\UNIVPM\PolimarcheRacingTeam\Volante\LCD-Volante-2024\v2-446re\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "softwareDisplay24-25_f446re.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\UNIVPM\PolimarcheRacingTeam\Volante\LCD-Volante-2024\v2-446re\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="softwareDisplay24-25_f446re.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+softwareDisplay24-25_f446re.elf softwareDisplay24-25_f446re.map: $(OBJS) $(USER_OBJS) C:\Users\zinga\Documents\.UNIVPM\PolimarcheRacingTeam\Volante\LCD-Volante-2024\DASHBOARD-446re-V1\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "softwareDisplay24-25_f446re.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\zinga\Documents\.UNIVPM\PolimarcheRacingTeam\Volante\LCD-Volante-2024\DASHBOARD-446re-V1\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="softwareDisplay24-25_f446re.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
