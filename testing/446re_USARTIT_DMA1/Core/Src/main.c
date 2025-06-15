@@ -20,6 +20,7 @@
 #include "main.h"
 #include "can.h"
 #include "dma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -49,7 +50,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t flagErroreInCorso = 0;
+uint16_t ultimoErroreRicevuto = 0;
+uint8_t errorValue = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,13 +64,10 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 #define MAX_COMMANDS 30
-#define MAX_COMMAND_LEN 64
+#define MAX_COMMAND_LEN 80
 
 #define COLOR_RED    63488
 #define COLOR_GREEN  1856
-
-
-
 
 DisplayVar vars[NData] = {
     { "SpeedValue",0, 0,1,0},
@@ -84,7 +84,7 @@ uint16_t freniData = 0;
 uint8_t flagOk = 0;
 uint8_t cmd_end[3] = {0xFF,0xFF,0xFF};
 
-volatile uint8_t flagOK = 0;
+volatile uint8_t flagStartingOK = 0;
 volatile uint8_t flagNewMap=0;
 uint16_t r2dData = 0;
 uint16_t mapData = 1;
@@ -217,11 +217,12 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_USART2_UART_Init();
   MX_CAN1_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  char msg[50] = " ";
+  char msg[60] = " ";
   int len;
   HAL_Delay(100);
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
@@ -232,9 +233,8 @@ int main(void)
   HAL_Delay(1500);	//delay
   HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 
-
   uint32_t currMillis = HAL_GetTick();
-  flagOK = 1;
+  flagStartingOK = 1;
   len = sprintf(msg, "page main");
   HAL_UART_Transmit(&huart1,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart1,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
@@ -247,11 +247,7 @@ int main(void)
 
   //HAL_TIM_Base_Start_IT(&htim6);
 
-
-
   CAN_setup();	//avvia il CAN + filtro
-
-  HAL_UART_Transmit(&huart2,(uint8_t*)"CIAO",strlen("CIAO"),HAL_MAX_DELAY);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -260,7 +256,7 @@ int main(void)
   {
 	  EnqueueNextionCommand("signal.val=1");  // Altro comando
 
-	  for(uint8_t i = 1;i<NData;i++){
+	  for(uint8_t i = 0;i<NData;i++){
 		  if(vars[i].flag == 1){
 			  vars[i].flag=0;
 			  SetDisplayVar(i, vars[i].currentValue);
@@ -322,6 +318,55 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void showError(int valore){
+	/*
+	char buff[40] = " ";
+	int len;
+	len = sprintf(buff,"vis ErrorValue,1",valore);
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis t0,1");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"ErrorValue.txt=\"%d\"",errorValue);
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis ErrorBar1,1");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis ErrorBar2,1");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+*/
+	EnqueueNextionCommand("vis t0,1");
+	EnqueueNextionCommand("vis ErrorValue,1");
+	EnqueueNextionCommand("vis ErrorBar1,1");
+	EnqueueNextionCommand("vis ErrorBar2,1");
+	EnqueueNextionCommand("ErrorValue.txt=\"%d\"",errorValue);
+}
+
+void hideError(){
+	/*
+	char buff[40] = " ";
+	int len;
+	len = sprintf(buff,"vis ErrorValue,0");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis t0,1");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis ErrorBar2,0");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	len = sprintf(buff,"vis t0,0");
+	buff[len]=0xFF;buff[len+1]=0xFF;buff[len+2]=0xFF;
+	HAL_UART_Transmit(&huart1,(uint8_t*)buff,len+3,HAL_MAX_DELAY);
+	*/
+	EnqueueNextionCommand("vis t0,0");
+	EnqueueNextionCommand("vis ErrorValue,0");
+	EnqueueNextionCommand("vis ErrorBar1,0");
+	EnqueueNextionCommand("vis ErrorBar2,0");
+}
 
 /* USER CODE END 4 */
 

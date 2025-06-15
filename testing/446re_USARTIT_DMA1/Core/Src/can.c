@@ -21,6 +21,7 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "tim.h"
 
 void CAN_setup(void){
 	 //SETUP CAN
@@ -167,7 +168,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 /* USER CODE BEGIN 1 */
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-		HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
         process_can_message(&RxHeader, RxData);
     }
@@ -184,8 +185,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			break;
 		case 0x024:
 			if(RxHeader->DLC == 4){
-		        int tempFan1 = (uint16_t)(buf[1] << 8 | buf[0]);
-		        int tempFan2 = (uint16_t)(buf[3] << 8 | buf[2]);
+		        int tempFan1 = (uint16_t)(buf[0] << 8 | buf[1]);
+		        int tempFan2 = (uint16_t)(buf[2] << 8 | buf[3]);
 		        tmpValue = (uint16_t)((tempFan1 + tempFan2) / 2);
 		        if(vars[5].lastValue!=tmpValue){
 		        	vars[5].lastValue=vars[5].currentValue;
@@ -233,6 +234,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 
 			}
 			break;
+
 		case 0x031:		//RPM x TEST
 				if(RxHeader->DLC == 2){
 					tmpValue = (uint16_t)(buf[0] | (buf[1] << 8));
@@ -244,6 +246,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			        }
 				}
 				break;
+
+				/*
 		case 0x030:	//velocita angolari ruote
 			//lettura in Little-Endian
 			//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
@@ -255,7 +259,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 				//int16_t val1 = (int16_t)((buf[0] << 8) | buf[1]);  // Byte 0-1
 				//int16_t val2 = (int16_t)((buf[2] << 8) | buf[3]);  // Byte 2-3
 				//vehicleSpeed = (uint8_t)((val1+val2)/2)*raggioRuota;
-				tmpValue = (uint8_t)((val1+val2)/2);
+				tmpValue = (uint16_t)((val1+val2)/2);
 		        if(vars[0].lastValue!=tmpValue){
 		        	vars[0].lastValue=vars[0].currentValue;
 		        	vars[0].currentValue = tmpValue;
@@ -263,7 +267,7 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 		        }
 			}
 			break;
-
+*/
 		case 0x026:	//stato percentuale batteria
 			if(RxHeader->DLC == 1){
 				tmpValue = (uint16_t)(buf[0]);
@@ -277,12 +281,13 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			}
 			break;
 			//ERRORI
-			/*
+
 		case 0x001:
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 1;
-				NEXTION_SendString("ErrorValue.txt",1, 11);
+				//NEXTION_SendString("ErrorValue.txt",1, 11);
+				showError(errorValue);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -291,7 +296,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 2;
-				NEXTION_SendString("ErrorValue.txt",2, 11);
+				//NEXTION_SendString("ErrorValue.txt",2, 11);
+				showError(errorValue);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -300,7 +306,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 3;
-				NEXTION_SendString("ErrorValue.txt",3, 11);
+				//NEXTION_SendString("ErrorValue.txt",3, 11);
+				showError(errorValue);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -309,7 +316,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 4;
-				NEXTION_SendString("ErrorValue.txt",4, 11);
+				//NEXTION_SendString("ErrorValue.txt",4, 11);
+				showError(errorValue);
 				ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
@@ -318,8 +326,8 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 5;
-				NEXTION_SendString("ErrorValue.txt",5, 11);
-				ultimoErroreRicevuto = HAL_GetTick();
+				//NEXTION_SendString("ErrorValue.txt",5, 11);
+				showError(errorValue);ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
 			break;
@@ -327,12 +335,11 @@ void process_can_message(CAN_RxHeaderTypeDef *RxHeader, uint8_t *buf) {
 			if (!flagErroreInCorso){
 				flagErroreInCorso = 1;
 				errorValue = 6;
-				NEXTION_SendString("ErrorValue.txt",6, 11);
-				ultimoErroreRicevuto = HAL_GetTick();
+				//NEXTION_SendString("ErrorValue.txt",6, 11);
+				showError(errorValue);ultimoErroreRicevuto = HAL_GetTick();
 				HAL_TIM_Base_Start_IT(&htim2);
 			}
 			break;
-			*/
     }
 }
 /* USER CODE END 1 */

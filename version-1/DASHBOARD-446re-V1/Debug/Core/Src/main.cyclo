@@ -1,0 +1,7 @@
+../Drivers/CMSIS/Include/core_cm4.h:1938:34:__NVIC_SystemReset	1
+../Core/Src/main.c:126:5:main	10
+../Core/Src/main.c:242:6:SystemClock_Config	3
+../Core/Src/main.c:287:6:NEXTION_SendString	10
+../Core/Src/main.c:354:6:MapValue	4
+../Core/Src/main.c:371:6:system_reset	0
+../Core/Src/main.c:386:6:Error_Handler	1

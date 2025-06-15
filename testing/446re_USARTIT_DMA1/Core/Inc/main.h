@@ -94,6 +94,15 @@ extern CAN_RxHeaderTypeDef RxHeader;
 extern uint32_t TxMailbox;
 extern CAN_HandleTypeDef hcan;
 
+extern volatile uint8_t flagErroreInCorso;
+extern uint16_t ultimoErroreRicevuto;
+extern uint8_t errorValue;
+extern uint8_t flagError;
+extern char errorName[20];
+
+extern volatile uint8_t flagStartingOK;
+extern uint8_t newData;
+extern volatile uint8_t flagNewMap;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
