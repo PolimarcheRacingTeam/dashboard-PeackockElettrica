@@ -94,9 +94,6 @@ CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
 uint32_t TxMailbox;\
 
-
-
-
 typedef struct {
     char buffer[MAX_COMMAND_LEN];
     uint8_t len;
