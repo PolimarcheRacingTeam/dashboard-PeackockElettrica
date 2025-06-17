@@ -1,0 +1,12 @@
+../Core/Src/main.c:142:6:TrySendNextCommand	3
+../Core/Src/main.c:131:6:EnqueueCommandRaw	2
+../Core/Src/main.c:113:6:EnqueueNextionCommand	1
+../Core/Src/main.c:150:6:HAL_UART_TxCpltCallback	2
+../Core/Src/main.c:179:6:SetDisplayVar	3
+../Core/Src/main.c:289:6:SystemClock_Config	3
+../Core/Src/main.c:196:5:main	5
+../Core/Src/main.c:333:6:showError	1
+../Core/Src/main.c:341:6:hideError	1
+../Core/Src/main.c:348:6:MapValueCheck	4
+../Core/Src/main.c:360:6:system_reset	1
+../Core/Src/main.c:372:6:Error_Handler	1
