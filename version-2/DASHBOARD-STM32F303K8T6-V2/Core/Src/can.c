@@ -25,6 +25,49 @@ CAN_HandleTypeDef hcan;
 
 #include "tim.h"
 
+
+
+void CAN_setup(void){
+	 //SETUP CAN
+	  //filtro CAN --> Serve per far funzionare il CANBUS (obbligatorio) --> Isola messaggio che non hanno id/maschera che mi interessa
+	  //tutti a 0 = non filtra niente
+	  can_filter.FilterActivation = ENABLE;
+	  can_filter.FilterBank = 0;
+	  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;	//CAN_FILTER_FIFO0
+	  can_filter.FilterIdHigh = 0;
+	  can_filter.FilterIdLow = 0;
+	  can_filter.FilterMaskIdHigh = 0; // Maschera per coprire l'intervallo da 0x012 a 0x053  sFilterConfig.FilterMaskIdLow = 0;
+	  can_filter.FilterMaskIdLow = 0;
+	  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+	  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+	  HAL_CAN_Start(&hcan);
+
+	  if(HAL_CAN_ConfigFilter(&hcan, &can_filter)!= HAL_OK){
+		  Error_Handler();
+	  }
+
+
+	  if(HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)!= HAL_OK){
+		  Error_Handler();
+	  }
+
+
+	  //HAL_CAN_ConfigFilter(&hcan1, &can_filter);
+	  //HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+	  /*
+	  r2dTxHeader.DLC = 1;	//numero byte che deve mandare (in questo caso basterebbe un bit)
+	  r2dTxHeader.StdId = 0x016; //id pacchetto
+	  r2dTxHeader.IDE = CAN_ID_STD;
+	  r2dTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
+
+	  mapTxHeader.DLC = 1;		//Numero byte messaggio, da 1 a 8
+	  mapTxHeader.StdId = 0x040; // Standard Identifier, va da 0 a 0x7FF (11bit)
+	  mapTxHeader.IDE = CAN_ID_STD;	//Indirizzi standard (=0) e non extended
+	  mapTxHeader.RTR = CAN_RTR_DATA; //DATA-Standard
+
+	  */
+}
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
