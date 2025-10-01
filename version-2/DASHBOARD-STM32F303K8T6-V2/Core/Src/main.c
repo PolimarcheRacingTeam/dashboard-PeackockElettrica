@@ -210,7 +210,7 @@ int main(void)
   //HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
   HAL_Delay(200);
   len = sprintf(msg, "page logoStart");
-  HAL_UART_Transmit(&huar2,(uint8_t*)msg,len,HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,len,HAL_MAX_DELAY);
   HAL_UART_Transmit(&huart2,cmd_end,3,HAL_MAX_DELAY); //invio comandi = esegue
   HAL_Delay(1200);	//delay
   //HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
