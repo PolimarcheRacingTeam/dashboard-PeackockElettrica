@@ -4,11 +4,25 @@
 #include "stm32f3xx.h"
 #include "main.h"
 #include "tim.h"
+#include <stdint.h>
 
-#define SR_reset() SR_writeByte(0)
+#define SR_DEBOUNCE_SAMPLES     5      // Numero di letture consecutive uguali richieste
+#define SR_READ_INTERVAL_MS     10     // Intervallo tra letture (ms)
+#define SR_SETUP_TIME_US        1      // Tempo di setup del latch (microsecondi)
 
-void SR_init();						//inizializza i tre pin a 0 e azzera lo shift register
-//void SR_writeByte(uint8_t data);	//invia un byte
-//void SR_writeOnes(uint8_t n);		//0<=n<=8, invia un byte della forma (8-n) zeri e n uni es. n=5 --> 00011111 = 2^5-1
+typedef struct {
+    uint8_t currentValue;              // Valore attualmente stabile
+    uint8_t lastRawValue;              // Ultima lettura grezza
+    uint8_t debounceCounter;           // Contatore per debouncing
+    uint32_t lastReadTime;             // Timestamp ultima lettura
+    uint8_t isValid;                   // Flag validità lettura
+} SR_State_t;
 
-#endif /* INC_SHIFT_REGISTER_H_ */
+void SR_Init(void);
+uint8_t SR_ReadRaw(void);
+int8_t SR_GetStablePosition(void);
+void SR_ProcessPeriodic(void);
+uint8_t SR_HasChanged(void);
+int8_t SR_GetCurrentPosition(void);
+
+#endif 

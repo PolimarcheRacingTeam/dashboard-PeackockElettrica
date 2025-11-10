@@ -204,6 +204,9 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
+  // Inizializza lo shift register
+  SR_Init();
+
   char msg[60] = " ";
   int len;
   HAL_Delay(100);
@@ -331,7 +334,7 @@ void MapValueCheck(){
 			flagNewMap=1;
 			EnqueueNextionCommand("page MapPopUp");
 			EnqueueNextionCommand("mapValue.txt=\"%d\"",vars[6].currentValue);
-			HAL_TIM_Base_Start_IT(&htim3); //avvia timer in mode one-pulse
+			HAL_TIM_Base_Start_IT(&htim3); 
 		}
 	}
 }
