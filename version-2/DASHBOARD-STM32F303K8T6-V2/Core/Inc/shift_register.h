@@ -9,6 +9,7 @@
 #define SR_DEBOUNCE_SAMPLES     5      // Numero di letture consecutive uguali richieste
 #define SR_READ_INTERVAL_MS     10     // Intervallo tra letture (ms)
 #define SR_SETUP_TIME_US        1      // Tempo di setup del latch (microsecondi)
+#define SR_ERROR_INVALID_STATE  255    // Valore di errore per stato invalido
 
 typedef struct {
     uint8_t currentValue;              // Valore attualmente stabile

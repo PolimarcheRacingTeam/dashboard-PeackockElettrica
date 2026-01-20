@@ -15,12 +15,16 @@ static SR_State_t sr_state = {
 
 // Inizializzazione
 void SR_Init(void) {
+    // Stato iniziale: CLOCK basso, LATCH alto (idle)
     HAL_GPIO_WritePin(SR_CLOCK_GPIO_Port, SR_CLOCK_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(SR_LATCH_GPIO_Port, SR_LATCH_Pin, GPIO_PIN_SET);
-    sr_state.currentValue = 0;
-    sr_state.lastRawValue = 0xFF;
-    sr_state.debounceCounter = 0;
-    sr_state.lastReadTime = 0;
+    
+    // Prima lettura per inizializzare lo stato
+    uint8_t initialValue = SR_ReadRaw();
+    sr_state.currentValue = initialValue;
+    sr_state.lastRawValue = initialValue;
+    sr_state.debounceCounter = SR_DEBOUNCE_SAMPLES; // Inizia già stabile
+    sr_state.lastReadTime = HAL_GetTick();
     sr_state.isValid = 0;
 }
 
@@ -28,26 +32,38 @@ void SR_Init(void) {
 uint8_t SR_ReadRaw(void) {
     uint8_t data = 0;
     
-    // Pulse sul latch per caricare i dati paralleli (PL pin)
+    // Pulse sul latch per caricare i dati paralleli (PL̅ attivo basso)
     HAL_GPIO_WritePin(SR_LATCH_GPIO_Port, SR_LATCH_Pin, GPIO_PIN_RESET);
     
-    // Breve attesa senza bloccare
-    for (volatile int i = 0; i < 72; i++) __NOP(); // circa ~1us -> 72MHz
+    // Setup time minimo: 25ns @ 4.5V, usiamo ~1μs per sicurezza
+    for (volatile int i = 0; i < 72; i++) __NOP(); // circa ~1us @ 72MHz
     
     HAL_GPIO_WritePin(SR_LATCH_GPIO_Port, SR_LATCH_Pin, GPIO_PIN_SET);
     
-    // Leggi i dati seriali 
+    // Breve delay dopo il latch per stabilizzare Q7 (propagation delay max 28ns)
+    for (volatile int i = 0; i < 10; i++) __NOP(); // ~140ns di sicurezza
+    
+    // Leggi i dati  (MSB first: Q7 -> Q0)
     for (int i = 0; i < 8; i++) {
         data <<= 1;
         
-        // Clock alto per leggere il bit
-        HAL_GPIO_WritePin(SR_CLOCK_GPIO_Port, SR_CLOCK_Pin, GPIO_PIN_SET);
-        
+        // Leggi il dato PRIMA del fronte di clock (dato stabile)
         if (HAL_GPIO_ReadPin(SR_DATA_GPIO_Port, SR_DATA_Pin) == GPIO_PIN_SET) {
             data |= 1;
         }
         
+        // Clock alto per shiftare al bit successivo
+        HAL_GPIO_WritePin(SR_CLOCK_GPIO_Port, SR_CLOCK_Pin, GPIO_PIN_SET);
+        
+        // Hold time minimo: 5ns (già garantito dalla velocità del GPIO)
+        for (volatile int j = 0; j < 5; j++) __NOP(); // ~70ns
+        
         HAL_GPIO_WritePin(SR_CLOCK_GPIO_Port, SR_CLOCK_Pin, GPIO_PIN_RESET);
+        
+        // Propagation delay per il prossimo bit (se non è l'ultimo)
+        if (i < 7) {
+            for (volatile int j = 0; j < 5; j++) __NOP(); // ~70ns
+        }
     }
     
     return data;
@@ -64,7 +80,7 @@ int determineSituation(uint8_t data) {
         case 0b01000000: return 7; // Situazione 7
         case 0b10000000: return 8; // Situazione 8
         case 0b00000000: return 0;
-        default: return -1; // Nessuna situazione valida
+        default: return -1; 
     }
 }
 
