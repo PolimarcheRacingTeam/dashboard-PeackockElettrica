@@ -109,7 +109,7 @@ dashboard-peacockElettrica/
 This project is licensed under the **[Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/)** license.
 
 Under these terms, you are free to copy and redistribute the material in any medium or format, as long as you comply with the following conditions:
-* **Attribution (BY):** You must give appropriate credit to the original author (Polimarche Racing Team) and provide a link to the license.
+* **Attribution (BY):** You must give appropriate credit to the original author (Alessandro Zingaretti | Polimarche Racing Team) and provide a link to the license.
 * **NonCommercial (NC):** You may not use the material for commercial purposes.
 * **NoDerivatives (ND):** If you remix, transform, or build upon the material, you may not distribute the modified material.
 
