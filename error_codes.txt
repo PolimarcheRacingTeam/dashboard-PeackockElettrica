@@ -1,0 +1,64 @@
+
+    ERR_NONE                  = 0,
+
+    /* Errori timeout CAN (scheda non risponde da > CAN_TIMEOUT_MS) */
+    ERR_TIMEOUT_BMS           = 1,
+    ERR_TIMEOUT_MCU           = 2,
+    ERR_TIMEOUT_PDM_VCU1      = 3,
+    ERR_TIMEOUT_PDM_VCU2      = 4,
+
+    /* Errori CAN DASHBOARD */
+    ERR_SR_HARDWARE           = 99,
+    ERR_CAN_FILTER_INIT       = 100,
+    ERR_CAN_TX                = 101,
+    ERR_CAN_RX                = 102,
+    ERR_CAN_BUSOFF            = 103,
+
+    /* Errori BMS (0x001) */
+    ERR_BMS_BASE_OVERVOLTAGE  = 201,  // real error = ERR_BMS_PACK_OVERVOLTAGE + module index
+    ERR_BMS_BASE_UNDERVOLTAGE = 211,  // real error = ERR_BMS_PACK_UNDERVOLTAGE + module index
+    ERR_BMS_BASE_OVERTEMP     = 221,  // real error = ERR_BMS_PACK_OVERTEMP + module index
+    ERR_BMS_PACK_OVERCURRENT  = 207,
+    ERR_BMS_PACK_OVERVOLTAGE  = 208,
+    ERR_BMS_CELL_OPENWIRE     = 209,
+    ERR_BMS_TEMP_OPENWIRE     = 210,
+    ERR_BMS_CURR_SENSOR_DISC  = 217,
+    ERR_BMS_SLAVE_DISC        = 218,
+
+    /* Errori Inverter (0x002 - 0x003)*/
+    ERR_MCU_INV1_FAULT        = 310,
+    ERR_MCU_INV2_FAULT        = 311,
+
+
+    /* Errori MCU/Inverter (0x006) */
+    ERR_MCU_INV1_DERATING     = 300,
+    ERR_MCU_INV2_DERATING     = 301,
+    ERR_MCU_APPS_IMPLAUS      = 302,
+    ERR_MCU_APP1_RANGE        = 303,
+    ERR_MCU_APP2_RANGE        = 304,
+    ERR_MCU_SAS_RANGE         = 305,
+    
+
+    /* Errori PDM VCU1 (0x005) */
+    ERR_PDM1_OVERCURRENT_R1   = 400,
+    ERR_PDM1_OVERCURRENT_R2   = 401,
+    ERR_PDM1_OVERCURRENT_R3   = 402,
+    ERR_PDM1_OVERCURRENT_R4   = 403,
+    ERR_PDM1_NEG_CURRENT      = 404,
+    ERR_PDM1_24V_RANGE        = 405,
+    ERR_PDM1_LOW_BATT         = 406,
+    ERR_PDM1_DC_TEMP          = 407,
+    ERR_PDM1_OC_24V_RAIL      = 408,
+    ERR_PDM1_OC_TSAC_FANS     = 409,
+    ERR_PDM1_OC_RAD_FANS_L    = 410,
+    ERR_PDM1_OC_RAD_FANS_R    = 411,
+    ERR_PDM1_OC_PUMP          = 412,
+
+    /* Errori PDM VCU2 (0x004) */
+    ERR_PDM2_REAR_BRAKE       = 500,
+    ERR_PDM2_REAR_PUSHRO_R    = 501,
+    ERR_PDM2_REAR_PUSHRO_L    = 502,
+    ERR_PDM2_REAR_SUSP_L      = 503,
+    ERR_PDM2_REAR_SUSP_R      = 504,
+    ERR_PDM2_COOLANT_TEMP_L   = 505,
+    ERR_PDM2_COOLANT_TEMP_R   = 506,

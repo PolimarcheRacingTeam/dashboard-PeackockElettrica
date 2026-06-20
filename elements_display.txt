@@ -1,0 +1,128 @@
+PAGINA 1
+speed.txt		SPEED
+soc.txt			SoC
+t_pack.txt 		TEMP_PACK_AVG
+r2d_status.pic=13	FLAG_ON
+r2d_status.pic=12	FLAG_OFF
+sdc_status.pic=13	FLAG_ON
+sdc_status.pic=12	FLAG_OFF
+t_inv.txt 		TEMP_INV_AVG
+t_motor.txt		TEMP_MOT_AVG
+lvbatt_volt.txt		LV_BATT			(0.1f)
+SOC-BAR
+soc_bar1.val		0-10%
+soc_bar2.val		11-20%
+soc_bar3.val		21-30%
+soc_bar4.val		31-40%
+soc_bar5.val		41-50%
+soc_bar6.val		51-60%
+soc_bar7.val		61-70%
+soc_bar8.val		71-80%
+soc_bar9.val		81-90%
+soc_bar10.val		91-100%
+error.txt 		ERROR_CAR		(3d)
+
+============================================================================================================
+PAGINA 2
+error.txt 		ERROR_CAR		(3d)
+speed.txt		SPEED
+r2d_status.pic=13	FLAG_ON
+r2d_status.pic=12	FLAG_OFF
+sdc_status.pic=13	FLAG_ON
+sdc_status.pic=12	FLAG_OFF
+speed_fl.txt		FW_FL
+speed_fr.txt		FW_FR
+app1.txt		APP1_VALUE
+app2.txt		APP2_VALUE
+brake_bar.txt		BRAKE_BAR_FRONT
+cool_temp.txt		COOLER_TEMP
+sas_angle.txt		SAS_VALUE		(+/- 3d)
+sas_perc_left.val	SAS_VALUE_NEG_BAR	(100 - SAS_VALUE_NEG_NORM)
+sas_perc_right.val	SAS_VALUE_POS_BAR	(100 - SAS_VALUE_POS_NORM)
+
+sas_perc_left.bco	63488			#colore sfondo per GAS
+sas_perc_left.pco	20480			#colore indicatore per GAS
+sas_perc_right.bco	20480			#colore sfondo per GAS
+sas_perc_right.pco	63488			#colore indicatore per GAS
+
+sas_perc_left.bco	1055			#colore sfondo per NORM
+sas_perc_left.pco	13			#colore indicatore per NORM
+sas_perc_right.bco	13			#colore sfondo per NORM
+sas_perc_right.pco	1055			#colore indicatore per NORM
+
+sas_perc_left.bco	2016			#colore sfondo per ECO
+sas_perc_left.pco	416			#colore indicatore per ECO
+sas_perc_right.bco	416			#colore sfondo per ECO
+sas_perc_right.pco	2016			#colore indicatore per ECO
+
+susp_fl.txt		SUSP_FL			(+/- 2d)
+susp_fr.txt		SUSP_FR			(+/- 2d)
+susp_rl.txt		SUSP_RL			(+/- 2d)
+susp_rr.txt		SUSP_RR			(+/- 2d)
+
+
+============================================================================================================
+PAGINA 3
+error.txt 		ERROR_CAR		(3d)
+speed.txt		SPEED
+lvbatt_volt.txt		LV_BATT			(0.1f)
+fan_perc.txt		FAN_PERC
+max_temp_pack.txt	MAX_TEMP_PACK		(3d)
+curr_reg_max.txt	MAX_REGEN_CURRENT	(3d)
+curr_dis_max.txt	MAX_DISCHARGE_CURRENT	(3d)
+curr_reg_max.txt	MAX_REGEN_CURRENT_BMS	(3d)
+temp_mot1.txt		TEMP_MOT104		(3d)
+temp_mot2.txt		TEMP_MOT204		(3d)
+current.txt		CURRENT			(+/- 3d) #sensore corrente
+temp_inv1.txt		TEMP_INV104		(3d)
+temp_inv2.txt		TEMP_INV204		(3d)
+soc.txt			SoC			(3d)
+soh.txt			SoH			(3d)
+MODULES
+m1_volt.txt		VOLT_MOD1		(<100 => .2f | >=100 => .1f)
+m2_volt.txt		VOLT_MOD2		(<100 => .2f | >=100 => .1f)
+m3_volt.txt		VOLT_MOD3		(<100 => .2f | >=100 => .1f)
+m4_volt.txt		VOLT_MOD4		(<100 => .2f | >=100 => .1f)
+m5_volt.txt		VOLT_MOD5		(<100 => .2f | >=100 => .1f)
+m6_volt.txt		VOLT_MOD6		(<100 => .2f | >=100 => .1f)
+m1_perc.val		VOLT_MOD1_NORM		
+m2_perc.val		VOLT_MOD2_NORM	
+m3_perc.val		VOLT_MOD3_NORM	
+m4_perc.val		VOLT_MOD4_NORM	
+m5_perc.val		VOLT_MOD5_NORM	
+m6_perc.val		VOLT_MOD6_NORM	
+
+mi_perc.bco		416			ECO
+mi_perc.pco		2016			ECO
+
+mi_perc.bco		13			NORMAL
+mi_perc.pco		1055			NORMAL
+
+mi_perc.bco		20480			GAS
+mi_perc.pco		63488			GAS
+============================================================================================================
+PAGINA4
+error.txt 		ERROR_CAR		(3d)
+speed.txt		SPEED
+
+
+# per regen, src, os, tvc
+regen_p.pic		23			ECO
+regen_m.pic		21			ECO
+
+regen_p.pic		22			NORM
+regen_m.pic		20			NORM
+
+regen_p.pic		15			GAS
+regen_p.pic		14			GAS
+
+regen_text.pco		0			NOT_SELECTED
+regen_text.pco		2016			SELECTED + ECO
+regen_text.pco		1055			SELECTED + NORM
+regen_text.pco		63488			SELECTED + GAS
+
+regen_num		CURRENT_PARAM
+
+
+soc.txt			SoC			(3d)
+soh.txt			SoH			(3d)
