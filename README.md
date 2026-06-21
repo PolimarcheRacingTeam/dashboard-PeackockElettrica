@@ -1,13 +1,12 @@
 # 🏎️ Peacock Elettrica - Steering Wheel Dashboard Firmware
 
-![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics&logoColor=white) ![CAN Bus](https://img.shields.io/badge/CAN_Bus-FFB900?style=for-the-badge&logo=data-line&logoColor=black) ![Nextion](https://img.shields.io/badge/Nextion_HMI-1A9C3E?style=for-the-badge&logoColor=white)
+![Version](https://img.shields.io/badge/version-v3.0.0--beta-blue.svg?style=for-the-badge) ![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics&logoColor=white) ![CAN Bus](https://img.shields.io/badge/CAN_Bus-FFB900?style=for-the-badge&logo=data-line&logoColor=black) ![Nextion](https://img.shields.io/badge/Nextion_HMI-1A9C3E?style=for-the-badge&logoColor=white)
 
 
 <p align="center">
   <img src="dashboard-layout/social_render.png" width="1000" alt="Social Media Preview"/>
 </p>
 
-![Version](https://img.shields.io/badge/version-v3.0.0--beta-blue.svg?style=for-the-badge) ![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics&logoColor=white) ![CAN Bus](https://img.shields.io/badge/CAN_Bus-FFB900?style=for-the-badge&logo=data-line&logoColor=black) ![Nextion](https://img.shields.io/badge/Nextion_HMI-1A9C3E?style=for-the-badge&logoColor=white)
 
 > 🌐 **Language / Lingua:** 🇬🇧 **English**
 > 
