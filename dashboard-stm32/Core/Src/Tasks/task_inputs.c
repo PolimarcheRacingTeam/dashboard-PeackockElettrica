@@ -166,6 +166,8 @@ static void Process_Input_Actions(void)
 void Task_ReadInputs(void)
 {
     Read_Physical_Buttons();
+#ifdef USE_SR
     Read_SR();
+#endif
     Process_Input_Actions();
 }

@@ -327,6 +327,7 @@ static void Draw_Page4(bool force, uint16_t bco, uint16_t pco)
  * ========================================================================= */
 void Task_UpdateDisplay(void)
 {
+	//car_state.mcu.car_speed++;
     static DashError_t displayed_error = ERR_NONE;
     static uint32_t    error_timer     = 0;
     static uint8_t     last_page = 0xFF;

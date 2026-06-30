@@ -24,11 +24,13 @@ bool Task_CheckCANTimeouts(void)
 {
     uint32_t now = HAL_GetTick();
 
+#ifdef CAN_ERROR_RX_OTHER_BOARDS
     if ((now - car_state.bms.last_can_message_received)      > CAN_TIMEOUT_MS) TIMEOUT_ERR(ERR_TIMEOUT_BMS);
     if ((now - car_state.mcu.last_can_message_received)      > CAN_TIMEOUT_MS) TIMEOUT_ERR(ERR_TIMEOUT_MCU);
     if ((now - car_state.pdm_vcu1.last_can_message_received) > CAN_TIMEOUT_MS) TIMEOUT_ERR(ERR_TIMEOUT_PDM_VCU1);
     if ((now - car_state.pdm_vcu2.last_can_message_received) > CAN_TIMEOUT_MS) TIMEOUT_ERR(ERR_TIMEOUT_PDM_VCU2);
 
+#endif
     return false;
 }
 
