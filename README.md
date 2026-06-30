@@ -1,15 +1,16 @@
 # 🏎️ Peacock Elettrica - Steering Wheel Dashboard Firmware
 
-![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics&logoColor=white) ![CAN Bus](https://img.shields.io/badge/CAN_Bus-FFB900?style=for-the-badge&logo=data-line&logoColor=black) ![Nextion](https://img.shields.io/badge/Nextion_HMI-1A9C3E?style=for-the-badge&logoColor=white)
+![Version](https://img.shields.io/badge/version-v3.0.0--beta-blue.svg?style=for-the-badge) ![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics&logoColor=white) ![CAN Bus](https://img.shields.io/badge/CAN_Bus-FFB900?style=for-the-badge&logo=data-line&logoColor=black) ![Nextion](https://img.shields.io/badge/Nextion_HMI-1A9C3E?style=for-the-badge&logoColor=white)
 
 
 <p align="center">
   <img src="dashboard-layout/social_render.png" width="1000" alt="Social Media Preview"/>
 </p>
 
+
 > 🌐 **Language / Lingua:** 🇬🇧 **English**
 > 
-> 📖 Firmware and UI assets for the steering wheel display of the **Peacock Elettrica** Formula Student race car, developed by **[Polimarche Racing Team](https://www.polimarcheracingteam.com/it/)**.
+> 📖 **3rd Generation** firmware and UI assets for the steering wheel display of the **Peacock Elettrica** Formula Student race car, developed by **[Polimarche Racing Team](https://www.polimarcheracingteam.com/it/)**.
 
 ---
 
@@ -30,6 +31,9 @@ The firmware is designed for ultra-low latency and absolute stability during rac
 * **Graphics Edge-Detection:** To prevent UART bottlenecking, the display task implements state-tracking. UI elements (colors, icons, backgrounds) are only transmitted when a state change occurs, not at every cycle.
 * **Safety Latching:** Critical errors are latched on screen for a minimum safety time (2000ms) to ensure visibility even during sensor fluctuations.
 
+
+---
+> **🚀 LATEST RELEASE:** We are currently testing the **v3.0.0-beta** (Track Test Candidate). Check out the [Releases page](../../releases) for the compiled binaries and the latest changelog.
 ---
 
 ## 📊 Parameters Displayed
